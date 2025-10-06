@@ -11,11 +11,24 @@ CONFIG += c++17
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    medicalproduct.cpp
+    medicalproduct.cpp \
+    medicine.cpp \
+    ointment.cpp \
+    safedate.cpp \
+    syrup.cpp \
+    tablet.cpp
 
 HEADERS += \
+    expiredproductexception.h \
+    invalidproductdataexception.h \
     mainwindow.h \
-    medicalproduct.h
+    medicalproduct.h \
+    medicalproductexception.h \
+    medicine.h \
+    ointment.h \
+    safedate.h \
+    syrup.h \
+    tablet.h
 
 FORMS += \
     mainwindow.ui
