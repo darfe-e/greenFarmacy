@@ -2,19 +2,24 @@
 #define EXPIREDPRODUCTEXCEPTION_H
 
 #include <iostream>
+#include <string>
+#include <ctime>
+#include "medicalproductexception.h"
+#include "safedate.h"
 
-class ExpiredProductException : public MedicalProductException {
+class ExpiredProductException : public MedicalProductException
+{
 private:
     std::string productId;
-    std::tm expirationDate;
+    SafeDate expirationDate;
 
 public:
-    ExpiredProductException(const std::string& productId, const std::tm& expDate)
+    ExpiredProductException(const std::string& productId, const SafeDate& expDate)
         : MedicalProductException("Product " + productId + " is expired"),
-        productId(productId), expirationDate(expDate) {}
+        productId(productId), expirationDate(expDate) {}  // Копирование SafeDate
 
     std::string getProductId() const { return productId; }
-    std::tm getExpirationDate() const { return expirationDate; }
+    SafeDate getExpirationDate() const { return expirationDate; }
 };
 
 #endif // EXPIREDPRODUCTEXCEPTION_H
