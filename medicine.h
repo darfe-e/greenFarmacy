@@ -2,25 +2,51 @@
 #define MEDICINE_H
 
 #include "medicalproduct.h"
-#include <iostream>
+#include <vector>
+#include <memory>
+#include <string>
 
-class Medicine : public MedicalProduct {
+class Medicine : public MedicalProduct
+{
 protected:
     bool isPrescription;
     std::string activeSubstance;
     std::string instructions;
-    std::vector<std::string> analogues;
+    std::vector<std::shared_ptr<Medicine>> analogues;
 
 public:
-    Medicine(const std::string& name, const std::string& manufacturer,
-             const std::string& regNumber, double price, const std::tm& expDate,
-             bool prescription, const std::string& activeSubst, const std::string& instr);
+    Medicine(std::string id, std::string name, double basePrice,
+             SafeDate expDate, std::string country,
+             bool prescription, std::string activeSubst, std::string instr);
 
-    virtual std::string getAdministrationMethod() const = 0; // Способ применения
-    virtual std::string getDosageForm() const = 0; // Лекарственная форма
+    // Запрещаем конструктор по умолчанию как у родителя
+    Medicine();
+    Medicine(const Medicine& other);
 
-    bool isExpired() const;
-    virtual void printInfo() const;
+    virtual ~Medicine() = default;
+
+    // Чисто виртуальные методы
+    virtual std::string getAdministrationMethod() const = 0;
+    virtual std::string getDosageForm() const = 0;
+
+    // Методы для работы с аналогами
+    void addAnalogue(std::shared_ptr<Medicine> analogue);
+    void removeAnalogue(const std::string& analogueId);
+    const std::vector<std::shared_ptr<Medicine>>& getAnalogues() const;
+
+    // Поиск аналогов
+    std::vector<std::shared_ptr<Medicine>> findAnaloguesBySubstance(const std::string& substance) const;
+    bool isAnalogueOf(const Medicine& other) const;
+
+    // Геттеры
+    bool getIsPrescription() const { return isPrescription; }
+    std::string getActiveSubstance() const { return activeSubstance; }
+    std::string getInstructions() const { return instructions; }
+
+    // Операторы
+    Medicine& operator=(const Medicine& other);
+    friend std::ostream& operator<<(std::ostream& os, const Medicine& med);
+    friend std::istream& operator>>(std::istream& is, Medicine& med);
 };
 
-#endif // MEDICINE_H
+#endif

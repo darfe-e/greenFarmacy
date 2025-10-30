@@ -1,16 +1,37 @@
 #ifndef TABLET_H
 #define TABLET_H
 
-#include "medicalproduct.h"
+#include "medicine.h"
+#include <iostream>
 
-class Tablet : public Medicine {
+class Tablet : public Medicine
+{
 private:
-    int pillCount; // Количество таблеток в упаковке
-    double dosageMg; // Дозировка в мг
+    int unitsPerPackage;
+    double dosageMg;
+    std::string coating;
 
 public:
-    Tablet(const std::string& name, double price, const std::tm& expDate, bool prescription, const std::string& instr, int count, double dosage);
-    void printInfo() const override; // Переопределяем метод вывода информации
+    Tablet(std::string id, std::string name, double basePrice,
+           SafeDate expDate, std::string country,
+           bool prescription, std::string activeSubst, std::string instr,
+           int units, double dosage, std::string coating);
+    Tablet();
+    Tablet(const Tablet& other);
+    ~Tablet() override = default;
+
+    std::string getAdministrationMethod() const override;
+    std::string getDosageForm() const override;
+
+    // Геттеры
+    int getUnitsPerPackage() const { return unitsPerPackage; }
+    double getDosageMg() const { return dosageMg; }
+    std::string getCoating() const { return coating; }
+
+    // Операторы
+    Tablet& operator=(const Tablet& other);
+    friend std::ostream& operator<<(std::ostream& os, const Tablet& tablet);
+    friend std::istream& operator>>(std::istream& is, Tablet& tablet);
 };
 
-#endif // TABLET_H
+#endif

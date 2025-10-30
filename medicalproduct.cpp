@@ -1,6 +1,6 @@
 #include "medicalproduct.h"
-#include "invalidproductdataexception.h"
-#include "expiredproductexception.h"
+#include "Exception/PharmacyExceptions/InvalidProductDataException.h"
+#include "Exception/PharmacyExceptions/ExpiredProductException.h"
 #include "safedate.h"
 
 MedicalProduct::MedicalProduct(std::string id, std::string name, double basePrice,

@@ -6,7 +6,8 @@
 #include <ctime>
 #include "safedate.h"
 
-class MedicalProduct {
+class MedicalProduct
+{
 protected:
     std::string id;
     std::string name;
@@ -19,7 +20,7 @@ public:
     MedicalProduct(std::string id, std::string name, double basePrice,
                    SafeDate expDate, std::string country);
 
-    MedicalProduct() = delete;
+    MedicalProduct();
 
     MedicalProduct(const MedicalProduct& other);
 
@@ -36,6 +37,7 @@ public:
     bool isExpired() const {return expirationDate.isExpired();}
 
     friend std::ostream& operator<<(std::ostream& os, const MedicalProduct& prod);
+    friend std::istream& operator >> (std::istream& is, MedicalProduct& prod);
     MedicalProduct& operator=(const MedicalProduct& other);
 };
 
