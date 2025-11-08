@@ -33,6 +33,7 @@ public:
     std::string getManufacturerCountry() const { return manufacturerCountry; }
 
     void setExpDate (SafeDate newExpDate){this->expirationDate = newExpDate;}
+    void setId (std::string id){this->id = id;}
 
     bool isExpired() const {return expirationDate.isExpired();}
 

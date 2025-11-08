@@ -22,6 +22,8 @@ SafeDate::SafeDate(int year, int month, int day)
         date.tm_year != dateCopy.tm_year) throw std::invalid_argument("Invalid date (was normalized)");
 }
 
+
+
 SafeDate::SafeDate(const SafeDate& other)
 {
     date.tm_year = other.date.tm_year;

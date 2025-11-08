@@ -11,6 +11,7 @@ class Pharmacy
 {
 private:
     std::string id;
+    std::string name;  // Убрать const
     std::string address;
     std::string phoneNumber;
     double rentCost;
@@ -18,7 +19,8 @@ private:
     Storage storage;
 
 public:
-    Pharmacy(const std::string& id, const std::string& addr, const std::string& phone,
+    // Добавить параметр name в конструктор
+    Pharmacy(const std::string& id, const std::string& name, const std::string& addr, const std::string& phone,
              double rent);
     Pharmacy();
     Pharmacy(const Pharmacy& other);
@@ -29,11 +31,14 @@ public:
     void removeFromStorage(const std::string& productId, int quantity);
     int checkStock(const std::string& productId) const;
 
+    std::shared_ptr<MedicalProduct> findProduct(const std::string& productNameOrId) const;
+
     // Поиск аналогов
     std::vector<std::shared_ptr<Medicine>> findAvailableAnalogues(const std::string& medicineId) const;
 
     // Геттеры
     std::string getId() const { return id; }
+    std::string getName() const { return name; }
     std::string getAddress() const { return address; }
     std::string getPhoneNumber() const { return phoneNumber; }
     double getRentCost() const { return rentCost; }

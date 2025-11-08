@@ -3,39 +3,23 @@
 #include <sstream>
 #include <stdexcept>
 
-Pharmacy::Pharmacy(const std::string& id, const std::string& addr, const std::string& phone,
+// Конструктор с name
+Pharmacy::Pharmacy(const std::string& id, const std::string& name, const std::string& addr, const std::string& phone,
                    double rent)
-    : id(id)
-    , address(addr)
-    , phoneNumber(phone)
-    , rentCost(rent)
-    , storage()
+    : id(id), name(name), address(addr), phoneNumber(phone), rentCost(rent)
 {
-    if (id.empty())
-        throw std::invalid_argument("Pharmacy ID cannot be empty");
-    if (address.empty())
-        throw std::invalid_argument("Address cannot be empty");
-    if (phoneNumber.empty())
-        throw std::invalid_argument("Phone number cannot be empty");
-    if (rentCost < 0)
-        throw std::invalid_argument("Rent cost cannot be negative");
 }
 
+// Конструктор по умолчанию
 Pharmacy::Pharmacy()
-    : id("")
-    , address("")
-    , phoneNumber("")
-    , rentCost(0.0)
-    , storage()
+    : id(""), name("Green Pharmacy"), address(""), phoneNumber(""), rentCost(0.0)
 {
 }
 
+// Конструктор копирования
 Pharmacy::Pharmacy(const Pharmacy& other)
-    : id(other.id)
-    , address(other.address)
-    , phoneNumber(other.phoneNumber)
-    , rentCost(other.rentCost)
-    , storage(other.storage)
+    : id(other.id), name(other.name), address(other.address),
+    phoneNumber(other.phoneNumber), rentCost(other.rentCost), storage(other.storage)
 {
 }
 
@@ -165,4 +149,16 @@ std::istream& operator>>(std::istream& is, Pharmacy& pharmacy)
     }
 
     return is;
+}
+
+std::shared_ptr<MedicalProduct> Pharmacy::findProduct(const std::string& productNameOrId) const
+{
+    auto allProducts = getAllProducts();
+    for (const auto& productPair : allProducts)
+    {
+        auto product = productPair.first;
+        if (product->getId() == productNameOrId || product->getName() == productNameOrId)
+            return product;
+    }
+    return nullptr;
 }

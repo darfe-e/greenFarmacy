@@ -3,6 +3,11 @@
 #include "Exception/PharmacyExceptions/ExpiredProductException.h"
 #include "safedate.h"
 
+MedicalProduct::MedicalProduct()
+    : id(""), name(""), basePrice(0.0), expirationDate(SafeDate(2025, 12, 31)), manufacturerCountry("")
+{
+}
+
 MedicalProduct::MedicalProduct(std::string id, std::string name, double basePrice,
                                SafeDate expDate, std::string country)
     : id(std::move(id)), name(std::move(name)), basePrice(basePrice),
@@ -44,6 +49,32 @@ std::ostream& operator<<(std::ostream& os, const MedicalProduct& prod)
        << "Manufacturer country: " << prod.manufacturerCountry;
 
     return os;
+}
+
+// Оператор ввода
+std::istream& operator>>(std::istream& is, MedicalProduct& prod)
+{
+    std::string temp;
+
+    // Пропускаем метки
+    std::getline(is, temp); // "ID: "
+    std::getline(is, prod.id);
+
+    std::getline(is, temp); // "Name: "
+    std::getline(is, prod.name);
+
+    std::getline(is, temp); // "Price: "
+    is >> prod.basePrice;
+    is.ignore(); // Пропускаем символ новой строки
+
+    std::getline(is, temp); // "Expiration Date: "
+    std::string dateStr;
+    std::getline(is, dateStr);
+
+    std::getline(is, temp); // "Manufacturer Country: "
+    std::getline(is, prod.manufacturerCountry);
+
+    return is;
 }
 
 MedicalProduct& MedicalProduct::operator=(const MedicalProduct& other)

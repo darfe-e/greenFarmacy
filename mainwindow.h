@@ -2,11 +2,18 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QStack>
+#include <QCompleter>
 
 QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
-}
+class QListWidget;
+class QListWidgetItem;
+class QTextEdit;
+class QLineEdit;
+class QPushButton;
+class QLabel;
+class QGroupBox;
+class QWidget;
 QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
@@ -17,7 +24,65 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void onSearchTextChanged(const QString &text);
+    void onSearchButtonClicked();
+    void onSearchEnterPressed();
+    void onShowAllProducts();
+    void onProductSelected(QListWidgetItem *item);
+    void onShowSupplies();
+    void onShowReturns();
+    void onShowWriteOffs();
+    void onShowAnalogues();
+    void onShowPharmacyAvailability();
+    void onAddProduct();
+    void onEditProduct();
+    void onDeleteProduct();
+    void onSaveChanges();
+    void onCancelEdit();
+    void onUndo();
+
 private:
-    Ui::MainWindow *ui;
+    void setupUI();
+    void setupColors();
+    void showProductList();
+    void showProductDetails(const QString& productId, const QString& productName);
+    void showEditPanel();
+    void hideEditPanel();
+    void updateCompleter();
+    void pushToUndoStack();
+
+    // UI Components
+    QLineEdit *searchEdit;
+    QCompleter *searchCompleter;
+    QPushButton *searchButton;
+    QPushButton *showAllButton;
+
+    // Navigation
+    QPushButton *suppliesBtn;
+    QPushButton *returnsBtn;
+    QPushButton *writeOffsBtn;
+    QPushButton *analoguesBtn;
+    QPushButton *availabilityBtn;
+    QPushButton *addProductBtn;
+
+    // Actions
+    QPushButton *saveBtn;
+    QPushButton *undoBtn;
+
+    // Main content
+    QListWidget *productsList;
+    QTextEdit *contentText;
+
+    // Edit panel (right side)
+    QWidget *editPanel;
+    QPushButton *editBtn;
+    QPushButton *deleteBtn;
+    QPushButton *cancelEditBtn;
+
+    QStack<QString> undoStack;
+    QString currentFilter;
+    bool isEditMode;
 };
+
 #endif // MAINWINDOW_H

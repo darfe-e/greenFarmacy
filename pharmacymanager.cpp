@@ -1,9 +1,9 @@
 #include "pharmacymanager.h"
-#include "supply.h"
-#include "return.h"
-#include "writeoff.h"
 #include <algorithm>
 #include <iostream>
+#include "tablet.h"
+#include <fstream>
+#include <sstream>
 
 PharmacyManager::PharmacyManager()
 {
@@ -63,6 +63,98 @@ void PharmacyManager::addOperation(std::shared_ptr<InventoryOperation> operation
     operations.push_back(operation);
 }
 
+std::vector<std::shared_ptr<Supply>> PharmacyManager::getSupplyOperations() const
+{
+    std::vector<std::shared_ptr<Supply>> supplies;
+    for (const auto& operation : operations)
+    {
+        if (auto supply = std::dynamic_pointer_cast<Supply>(operation))
+            supplies.push_back(supply);
+    }
+    return supplies;
+}
+
+std::vector<std::shared_ptr<Return>> PharmacyManager::getReturnOperations() const
+{
+    std::vector<std::shared_ptr<Return>> returns;
+    for (const auto& operation : operations)
+    {
+        if (auto returnOp = std::dynamic_pointer_cast<Return>(operation))
+            returns.push_back(returnOp);
+    }
+    return returns;
+}
+
+std::vector<std::shared_ptr<WriteOff>> PharmacyManager::getWriteOffOperations() const
+{
+    std::vector<std::shared_ptr<WriteOff>> writeOffs;
+    for (const auto& operation : operations)
+    {
+        if (auto writeOff = std::dynamic_pointer_cast<WriteOff>(operation))
+            writeOffs.push_back(writeOff);
+    }
+    return writeOffs;
+}
+
+
+std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProductsByCountry(const std::string& country) const
+{
+    std::vector<std::shared_ptr<MedicalProduct>> result;
+    for (const auto& pair : productsCatalog)
+    {
+        if (pair.second->getManufacturerCountry().find(country) != std::string::npos)
+            result.push_back(pair.second);
+    }
+    return result;
+}
+
+std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProductsBySubstance(const std::string& substance) const
+{
+    std::vector<std::shared_ptr<MedicalProduct>> result;
+    for (const auto& pair : productsCatalog)
+    {
+        if (auto medicine = std::dynamic_pointer_cast<Medicine>(pair.second))
+        {
+            if (medicine->getActiveSubstance().find(substance) != std::string::npos)
+                result.push_back(medicine);
+        }
+    }
+    return result;
+}
+
+std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProducts(const std::string& searchTerm) const
+{
+    std::vector<std::shared_ptr<MedicalProduct>> result;
+    for (const auto& pair : productsCatalog)
+    {
+        auto product = pair.second;
+        if (product->getName().find(searchTerm) != std::string::npos ||
+            product->getId().find(searchTerm) != std::string::npos ||
+            product->getManufacturerCountry().find(searchTerm) != std::string::npos)
+        {
+            result.push_back(product);
+        }
+        else if (auto medicine = std::dynamic_pointer_cast<Medicine>(product))
+        {
+            if (medicine->getActiveSubstance().find(searchTerm) != std::string::npos)
+                result.push_back(medicine);
+        }
+    }
+    return result;
+}
+
+std::map<std::string, int> PharmacyManager::getProductAvailability(const std::string& productId) const
+{
+    std::map<std::string, int> availability;
+    for (const auto& pharmacyPair : pharmacies)
+    {
+        int quantity = pharmacyPair.second->checkStock(productId);
+        if (quantity > 0)
+            availability[pharmacyPair.first] = quantity;
+    }
+    return availability;
+}
+
 std::vector<std::pair<std::string, std::string>> PharmacyManager::findProductInPharmacies(const std::string& productNameOrId) const
 {
     std::vector<std::pair<std::string, std::string>> result;
@@ -100,13 +192,23 @@ std::vector<std::shared_ptr<Medicine>> PharmacyManager::getAnalogues(const std::
 std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProductsByName(const std::string& name) const
 {
     std::vector<std::shared_ptr<MedicalProduct>> result;
-
-    for (const auto& productPair : productsCatalog)
+    for (const auto& pair : productsCatalog)
     {
-        if (productPair.second->getName().find(name) != std::string::npos)
-            result.push_back(productPair.second);
+        auto product = pair.second;
+        // Поиск по названию, ID или стране
+        if (product->getName().find(name) != std::string::npos ||
+            product->getId().find(name) != std::string::npos ||
+            product->getManufacturerCountry().find(name) != std::string::npos)
+            result.push_back(product);
     }
+    return result;
+}
 
+std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::getAllProducts() const
+{
+    std::vector<std::shared_ptr<MedicalProduct>> result;
+    for (const auto& pair : productsCatalog)
+        result.push_back(pair.second);
     return result;
 }
 
@@ -143,41 +245,3 @@ void PharmacyManager::displayWriteOffInfo() const
     }
 }
 
-void PharmacyManager::initializeSampleData()
-{
-    // Добавление тестовых продуктов
-    auto medicine1 = std::make_shared<Medicine>("M001", "Paracetamol", "PharmaCo", 15.50, 100,
-                                                "2025-12-31", "paracetamol", 500, "mg");
-    auto medicine2 = std::make_shared<Medicine>("M002", "Ibuprofen", "HealthInc", 18.75, 50,
-                                                "2025-10-15", "ibuprofen", 400, "mg");
-    auto medicine3 = std::make_shared<Medicine>("M003", "Aspirin", "MedCorp", 12.30, 200,
-                                                "2024-08-20", "acetylsalicylic acid", 100, "mg");
-
-    addProduct(medicine1);
-    addProduct(medicine2);
-    addProduct(medicine3);
-
-    // Добавление тестовых аптек
-    auto pharmacy1 = std::make_shared<Pharmacy>("P001", "Central Pharmacy", "123 Main St", "555-0101");
-    auto pharmacy2 = std::make_shared<Pharmacy>("P002", "Northside Pharmacy", "456 North Ave", "555-0102");
-
-    pharmacy1->addProduct(medicine1, 50);
-    pharmacy1->addProduct(medicine2, 25);
-    pharmacy2->addProduct(medicine1, 30);
-    pharmacy2->addProduct(medicine3, 100);
-
-    addPharmacy(pharmacy1);
-    addPharmacy(pharmacy2);
-
-    // Добавление тестовых операций
-    auto supply1 = std::make_shared<Supply>("OP001", SafeDate("2024-01-15"), medicine1, 50,
-                                            "Supplier A", "Central Pharmacy");
-    auto return1 = std::make_shared<Return>("OP002", SafeDate("2024-01-20"), medicine2, 5,
-                                            "Defective packaging");
-    auto writeOff1 = std::make_shared<WriteOff>("OP003", SafeDate("2024-01-25"), medicine3, 10,
-                                                "Expired");
-
-    addOperation(supply1);
-    addOperation(return1);
-    addOperation(writeOff1);
-}

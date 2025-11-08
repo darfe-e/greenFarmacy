@@ -7,6 +7,9 @@
 #include <map>
 #include <vector>
 #include <memory>
+#include "supply.h"
+#include "return.h"
+#include "writeoff.h"
 
 class PharmacyManager
 {
@@ -33,6 +36,27 @@ public:
     // Управление операциями
     void addOperation(std::shared_ptr<InventoryOperation> operation);
 
+    // Геттеры для доступа к данным
+    const std::vector<std::shared_ptr<InventoryOperation>>& getOperations() const { return operations; }
+    const std::map<std::string, std::shared_ptr<MedicalProduct>>& getProductsCatalog() const { return productsCatalog; }
+    const std::map<std::string, std::shared_ptr<Pharmacy>>& getPharmacies() const { return pharmacies; }
+
+    // Поиск операций по типу
+    std::vector<std::shared_ptr<Supply>> getSupplyOperations() const;
+    std::vector<std::shared_ptr<Return>> getReturnOperations() const;
+    std::vector<std::shared_ptr<WriteOff>> getWriteOffOperations() const;
+
+    // Получение всех продуктов
+    std::vector<std::shared_ptr<MedicalProduct>> getAllProducts() const;
+
+    // Поиск по различным критериям
+    std::vector<std::shared_ptr<MedicalProduct>> searchProductsByCountry(const std::string& country) const;
+    std::vector<std::shared_ptr<MedicalProduct>> searchProductsBySubstance(const std::string& substance) const;
+    std::vector<std::shared_ptr<MedicalProduct>> searchProducts(const std::string& searchTerm) const;
+
+    // Получение информации о наличии в аптеках
+    std::map<std::string, int> getProductAvailability(const std::string& productId) const;
+
     // Основной функционал
     std::vector<std::pair<std::string, std::string>> findProductInPharmacies(const std::string& productNameOrId) const;
     std::vector<std::shared_ptr<Medicine>> getAnalogues(const std::string& productId) const;
@@ -45,11 +69,7 @@ public:
     void displayReturnInfo() const;
     void displayWriteOffInfo() const;
 
-    // Инициализация тестовых данных
-    void initializeSampleData();
-
     // Операторы
     PharmacyManager& operator=(const PharmacyManager& other) = delete;
 };
-
 #endif

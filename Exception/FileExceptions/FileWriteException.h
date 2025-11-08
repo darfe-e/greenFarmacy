@@ -1,7 +1,8 @@
 #ifndef FILEWRITEEXCEPTION_H
 #define FILEWRITEEXCEPTION_H
 
-#include "FileWriteException.h"
+#include "FileOperationException.h"
+#include <string>
 
 class FileWriteException : public FileOperationException
 {
@@ -13,7 +14,6 @@ public:
         : FileOperationException("Write error for file '" + file + "': " + details),
         filename(file) {}
 
-    std::string getErrorCode() const override { return "FILE_WRITE_001"; }
     std::string getFilename() const { return filename; }
 };
 

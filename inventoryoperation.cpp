@@ -70,26 +70,51 @@ std::istream& operator>>(std::istream& is, InventoryOperation& operation)
     {
         std::string temp;
 
+        // Чтение ID операции
         std::getline(is, temp);                    // "Operation ID: "
         std::getline(is, operation.id);
 
+        // Чтение и парсинг даты
         std::getline(is, temp);                    // "Date: "
         std::getline(is, temp);
-        // Здесь нужна реализация парсинга даты из строки
 
+        // Парсинг даты из формата "YYYY-MM-DD"
+        std::stringstream dateSS(temp);
+        std::string yearStr, monthStr, dayStr;
+
+        std::getline(dateSS, yearStr, '-');
+        std::getline(dateSS, monthStr, '-');
+        std::getline(dateSS, dayStr, '-');
+
+        int year = std::stoi(yearStr);
+        int month = std::stoi(monthStr);
+        int day = std::stoi(dayStr);
+
+        operation.operationDate = SafeDate(year, month, day);
+
+        // Чтение информации о продукте
         std::getline(is, temp);                    // "Product: "
         std::getline(is, temp);
-        // Здесь нужна реализация загрузки продукта по имени/ID
 
+        std::string productId = temp; // предполагаем, что это ID продукта
+        std::string productName = "Temp Product"; // временное имя
+
+        // Создаем временный продукт (в реальной системе нужно искать в каталоге)
+        operation.product = std::make_shared<MedicalProduct>(
+            productId, productName, 0.0, SafeDate(2025, 12, 31), "Unknown");
+
+        // Чтение количества
         std::getline(is, temp);                    // "Quantity: "
         std::getline(is, temp);
         operation.quantity = std::stoi(temp);
 
+        // Чтение статуса
         std::getline(is, temp);                    // "Status: "
         std::getline(is, operation.status);
 
+        // Пропускаем тип операции (он будет обработан в производных классах)
         std::getline(is, temp);                    // "Type: "
-        std::getline(is, temp);                    // пропускаем тип операции
+        std::getline(is, temp);
 
     }
     catch (const std::exception& e)
