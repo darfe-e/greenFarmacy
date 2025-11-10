@@ -2,13 +2,13 @@
 #define ADDPRODUCTDIALOG_H
 
 #include <QDialog>
-
-class QLineEdit;
-class QComboBox;
-class QTextEdit;
-class QDoubleSpinBox;
-class QDateEdit;
-class QCheckBox;
+#include <QLineEdit>
+#include <QComboBox>
+#include <QTextEdit>
+#include <QDoubleSpinBox>
+#include <QDateEdit>
+#include <QCheckBox>
+#include <QDate>
 
 class AddProductDialog : public QDialog
 {
@@ -22,6 +22,17 @@ public:
                         const QString& country, bool prescription,
                         const QString& substance, const QString& instructions);
 
+    // Методы доступа к данным
+    QString getId() const;
+    QString getName() const;
+    double getPrice() const;
+    QString getType() const;
+    QDate getExpiryDate() const;
+    QString getCountry() const;
+    bool isPrescription() const;
+    QString getSubstance() const;
+    QString getInstructions() const;
+
 private slots:
     void onAddProduct();
     void onCancel();
@@ -29,6 +40,7 @@ private slots:
 private:
     void setupUI();
 
+    // Указатели на виджеты формы
     QLineEdit *idEdit;
     QLineEdit *nameEdit;
     QDoubleSpinBox *priceEdit;

@@ -13,8 +13,67 @@
 #include <QGroupBox>
 #include <QMessageBox>
 
+// Реализации методов доступа к данным
+QString AddProductDialog::getId() const
+{
+    return idEdit ? idEdit->text() : QString();
+}
+
+QString AddProductDialog::getName() const
+{
+    return nameEdit ? nameEdit->text() : QString();
+}
+
+double AddProductDialog::getPrice() const
+{
+    return priceEdit ? priceEdit->value() : 0.0;
+}
+
+QString AddProductDialog::getType() const
+{
+    return typeComboBox ? typeComboBox->currentText() : QString();
+}
+
+QDate AddProductDialog::getExpiryDate() const
+{
+    return expiryDateEdit ? expiryDateEdit->date() : QDate();
+}
+
+QString AddProductDialog::getCountry() const
+{
+    return countryEdit ? countryEdit->text() : QString();
+}
+
+bool AddProductDialog::isPrescription() const
+{
+    return prescriptionCheck ? prescriptionCheck->isChecked() : false;
+}
+
+QString AddProductDialog::getSubstance() const
+{
+    return substanceEdit ? substanceEdit->text() : QString();
+}
+
+QString AddProductDialog::getInstructions() const
+{
+    return instructionsEdit ? instructionsEdit->toPlainText() : QString();
+}
+
+// Остальная реализация класса остается без изменений
 AddProductDialog::AddProductDialog(QWidget *parent)
     : QDialog(parent)
+    , idEdit(nullptr)
+    , nameEdit(nullptr)
+    , priceEdit(nullptr)
+    , typeComboBox(nullptr)
+    , expiryDateEdit(nullptr)
+    , countryEdit(nullptr)
+    , prescriptionCheck(nullptr)
+    , substanceEdit(nullptr)
+    , instructionsEdit(nullptr)
+    , tabletFields(nullptr)
+    , syrupFields(nullptr)
+    , ointmentFields(nullptr)
 {
     setupUI();
 }
@@ -23,8 +82,11 @@ void AddProductDialog::setEditMode(bool editMode)
 {
     if (editMode) {
         setWindowTitle("Редактирование лекарства");
-        // Можно заблокировать поле ID при редактировании
-        // idEdit->setReadOnly(true);
+        // Находим и переименовываем кнопку "Добавить" в "Сохранить"
+        QPushButton *addButton = findChild<QPushButton*>();
+        if (addButton && addButton->text() == "Добавить") {
+            addButton->setText("Сохранить");
+        }
     } else {
         setWindowTitle("Добавление нового лекарства");
     }
@@ -35,20 +97,22 @@ void AddProductDialog::setProductData(const QString& id, const QString& name, do
                                       const QString& country, bool prescription,
                                       const QString& substance, const QString& instructions)
 {
-    idEdit->setText(id);
-    nameEdit->setText(name);
-    priceEdit->setValue(price);
+    if (idEdit) idEdit->setText(id);
+    if (nameEdit) nameEdit->setText(name);
+    if (priceEdit) priceEdit->setValue(price);
 
-    int index = typeComboBox->findText(type);
-    if (index != -1) {
-        typeComboBox->setCurrentIndex(index);
+    if (typeComboBox) {
+        int index = typeComboBox->findText(type);
+        if (index != -1) {
+            typeComboBox->setCurrentIndex(index);
+        }
     }
 
-    expiryDateEdit->setDate(expiryDate);
-    countryEdit->setText(country);
-    prescriptionCheck->setChecked(prescription);
-    substanceEdit->setText(substance);
-    instructionsEdit->setPlainText(instructions);
+    if (expiryDateEdit) expiryDateEdit->setDate(expiryDate);
+    if (countryEdit) countryEdit->setText(country);
+    if (prescriptionCheck) prescriptionCheck->setChecked(prescription);
+    if (substanceEdit) substanceEdit->setText(substance);
+    if (instructionsEdit) instructionsEdit->setPlainText(instructions);
 }
 
 void AddProductDialog::setupUI()
@@ -137,11 +201,31 @@ void AddProductDialog::setupUI()
 
 void AddProductDialog::onAddProduct()
 {
-    QMessageBox::information(this, "Добавление", "Лекарство добавлено в систему (заглушка)");
-    accept();
+    // Проверяем обязательные поля
+    if (idEdit->text().isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Введите ID лекарства");
+        return;
+    }
+
+    if (nameEdit->text().isEmpty()) {
+        QMessageBox::warning(this, "Ошибка", "Введите название лекарства");
+        return;
+    }
+
+    if (priceEdit->value() <= 0) {
+        QMessageBox::warning(this, "Ошибка", "Введите корректную цену");
+        return;
+    }
+
+    // УБИРАЕМ сообщение об успехе - оно вызывает проблемы
+    // Вместо этого просто закрываем диалог
+
+    accept(); // Закрываем диалог с результатом Accepted
 }
 
 void AddProductDialog::onCancel()
 {
     reject();
 }
+
+

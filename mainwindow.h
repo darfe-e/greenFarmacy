@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QStack>
 #include <QCompleter>
+#include "addproductdialog.h"
 
 QT_BEGIN_NAMESPACE
 class QListWidget;
@@ -41,6 +42,7 @@ private slots:
     void onSaveChanges();
     void onCancelEdit();
     void onUndo();
+    void onItemSelected();
 
 private:
     void setupUI();
@@ -51,6 +53,9 @@ private:
     void hideEditPanel();
     void updateCompleter();
     void pushToUndoStack();
+    void performSearch(const QString &searchText);
+    void fillDialogWithProductData(AddProductDialog *dialog, const QString& productId, const QString& productName);
+    void saveProductChanges(const QString& productId);
 
     // UI Components
     QLineEdit *searchEdit;

@@ -163,6 +163,7 @@ void MainWindow::setupUI()
     connect(editBtn, &QPushButton::clicked, this, &MainWindow::onEditProduct);
     connect(deleteBtn, &QPushButton::clicked, this, &MainWindow::onDeleteProduct);
     connect(cancelEditBtn, &QPushButton::clicked, this, &MainWindow::onCancelEdit);
+    connect(productsList, &QListWidget::itemSelectionChanged, this, &MainWindow::onItemSelected);
 
     // Горячие клавиши
     undoBtn->setShortcut(QKeySequence("Ctrl+Z"));
@@ -272,83 +273,103 @@ void MainWindow::showProductList()
 
 void MainWindow::showProductDetails(const QString& productId, const QString& productName)
 {
-    if (!productsList || !contentText) return;
+    if (!contentText) return;
 
-    // Скрываем список, показываем детальную информацию
+    // Скрываем список и показываем текстовое поле с деталями
     productsList->setVisible(false);
     contentText->setVisible(true);
 
-    contentText->clear();
-    contentText->setHtml(
-        QString("<h2 style='color: #2E7D32;'>%1</h2>"
-                "<table width='100%' cellpadding='5'>"
-                "<tr><td width='30%'><b>ID:</b></td><td>%2</td></tr>"
-                "<tr><td><b>Название:</b></td><td>%1</td></tr>"
-                "<tr><td><b>Цена:</b></td><td>15.50 руб.</td></tr>"
-                "<tr><td><b>Страна:</b></td><td>Россия</td></tr>"
-                "<tr><td><b>Срок годности:</b></td><td>2025-12-31</td></tr>"
-                "<tr><td><b>Статус:</b></td><td><span style='color: #4CAF50;'>✓ В наличии</span></td></tr>"
-                "<tr><td><b>Активное вещество:</b></td><td>%3</td></tr>"
-                "<tr><td><b>Форма выпуска:</b></td><td>Таблетки</td></tr>"
-                "<tr><td><b>Способ применения:</b></td><td>По 1 таблетке 3 раза в день</td></tr>"
-                "</table>"
-                "<br><button style='background-color: #4CAF50; color: white; padding: 10px; border: none; border-radius: 5px;' onclick='alert(\"Режим редактирования\")'>Изменить</button>")
-            .arg(productName)
-            .arg(productId)
-            .arg(productName) // временно используем имя как активное вещество
-        );
+    // Формируем детальную информацию о продукте
+    QString details;
+
+    if (productId == "M001") {
+        details = QString(
+            "# Информация\n\n"
+            "## Парацетамол\n"
+            "**ID:** M001\n"
+            "**Название:** Парацетамол\n"
+            "**Цена:** 15.50 руб.\n"
+            "**Страна:** Россия\n"
+            "**Срок годности:** 2025-12-31\n"
+            "**Статус:** ✓ В наличии\n"
+            "**Активное вещество:** Парацетамол\n"
+            "**Форма выпуска:** Таблетки\n"
+            "**Способ применения:** По 1 таблетке 3 раза в день\n\n"
+            "[Изменение]"
+            );
+    } else if (productId == "M002") {
+        details = QString(
+            "# Информация\n\n"
+            "## Ибупрофен\n"
+            "**ID:** M002\n"
+            "**Название:** Ибупрофен\n"
+            "**Цена:** 18.75 руб.\n"
+            "**Страна:** Россия\n"
+            "**Срок годности:** 2025-10-15\n"
+            "**Статус:** ✓ В наличии\n"
+            "**Активное вещество:** Ибупрофен\n"
+            "**Форма выпуска:** Таблетки\n"
+            "**Способ применения:** По 1 таблетке 2-3 раза в день\n\n"
+            "[Изменение]"
+            );
+    }
+    // Добавьте остальные продукты по аналогии...
+
+    contentText->setHtml("<pre>" + details + "</pre>");
 }
 
 void MainWindow::showEditPanel()
 {
-    if (editPanel) {
-        editPanel->setVisible(true);
+    if (editPanel && editPanel->isHidden()) {
+        editPanel->show();
         isEditMode = true;
     }
 }
 
 void MainWindow::hideEditPanel()
 {
-    if (editPanel) {
-        editPanel->setVisible(false);
+    if (editPanel && !editPanel->isHidden()) {
+        editPanel->hide();
         isEditMode = false;
     }
 }
 
 void MainWindow::updateCompleter()
 {
-    QStringList sampleData = {
-        "Парацетамол", "Ибупрофен", "Аспирин", "Амбробене", "Нурофен",
-        "Анальгин", "Цитрамон", "Но-шпа", "Валидол", "Корвалол",
-        "M001", "M002", "M003", "M004", "M005", "M006", "M007",
-        "Россия", "Германия", "США", "Словения", "Великобритания", "Франция"
-    };
+    QStringList wordList;
+    wordList << "Парацетамол" << "Ибупрофен" << "Аспирин" << "Амбробене"
+             << "Нурофен" << "Анальгин" << "Цитрамон"
+             << "M001" << "M002" << "M003" << "M004" << "M005" << "M006" << "M007";
 
-    searchCompleter->setModel(new QStringListModel(sampleData, searchCompleter));
+    searchCompleter->setModel(new QStringListModel(wordList, searchCompleter));
 }
 
 // ===== SLOTS =====
 
 void MainWindow::onSearchTextChanged(const QString &text)
 {
-    currentFilter = text;
+    // Автопоиск при вводе (опционально)
+    if (text.length() >= 2) {
+        performSearch(text);
+    } else if (text.isEmpty()) {
+        onShowAllProducts();
+    }
 }
 
 void MainWindow::onSearchButtonClicked()
 {
-    onSearchEnterPressed();
+    QString searchText = searchEdit->text().trimmed();
+    if (searchText.isEmpty()) {
+        onShowAllProducts();
+        return;
+    }
+
+    performSearch(searchText);
 }
 
 void MainWindow::onSearchEnterPressed()
 {
-    if (currentFilter.isEmpty()) {
-        onShowAllProducts();
-    } else {
-        showProductList();
-        // Здесь будет фильтрация списка по currentFilter
-        QMessageBox::information(this, "Поиск",
-                                 QString("Поиск по запросу: \"%1\"\n(функциональность будет реализована)").arg(currentFilter));
-    }
+    onSearchButtonClicked();
 }
 
 void MainWindow::onShowAllProducts()
@@ -358,7 +379,12 @@ void MainWindow::onShowAllProducts()
         searchEdit->clear();
     }
     showProductList();
-    hideEditPanel();
+    hideEditPanel(); // Скрываем панель при показе всего списка
+
+    // Сбрасываем текст контента
+    if (contentText) {
+        contentText->setVisible(false);
+    }
 }
 
 void MainWindow::onProductSelected(QListWidgetItem *item)
@@ -369,7 +395,7 @@ void MainWindow::onProductSelected(QListWidgetItem *item)
     QString productName = item->text().left(item->text().indexOf(" ("));
 
     showProductDetails(productId, productName);
-    hideEditPanel(); // Скрываем панель редактирования при выборе нового продукта
+    showEditPanel();
 }
 
 void MainWindow::onShowSupplies()
@@ -410,21 +436,121 @@ void MainWindow::onAddProduct()
 
 void MainWindow::onEditProduct()
 {
-    showEditPanel();
-    QMessageBox::information(this, "Редактирование",
-                             "Панель редактирования активирована\n(функциональность будет реализована)");
+    QListWidgetItem *item = productsList->currentItem();
+    if (!item) return;
+
+    QString productId = item->data(Qt::UserRole).toString();
+
+    AddProductDialog *dialog = new AddProductDialog(this);
+    dialog->setEditMode(true);
+    fillDialogWithProductData(dialog, productId, "");
+
+    if (dialog->exec() == QDialog::Accepted) {
+        // Получаем обновленные данные из диалога
+        QString newId = dialog->getId();
+        QString newName = dialog->getName();
+        double newPrice = dialog->getPrice();
+        QString newType = dialog->getType();
+
+        // Обновляем элемент в списке
+        QString newText = QString("%1 (%2) - %3 руб.").arg(newName).arg(newId).arg(newPrice, 0, 'f', 2);
+        item->setText(newText);
+        item->setData(Qt::UserRole, newId);
+
+        // Показываем сообщение об успехе ПОСЛЕ закрытия диалога
+        QMessageBox::information(this, "Успех", "Данные лекарства обновлены!");
+
+        // Обновляем детальную информацию
+        onProductSelected(item);
+    }
+
+    delete dialog;
+}
+
+void MainWindow::saveProductChanges(const QString& productId)
+{
+    // Здесь должна быть логика сохранения изменений в вашей модели данных
+    // Пока просто обновим отображение
+
+    QListWidgetItem *item = productsList->currentItem();
+    if (item) {
+        // Обновляем текст в списке
+        // В реальном приложении здесь нужно получить новые данные из диалога
+        // и обновить элемент списка
+        QMessageBox::information(this, "Сохранение",
+                                 "Изменения для " + productId + " сохранены (заглушка)");
+
+        // Обновляем детальную информацию
+        onProductSelected(item);
+    }
+}
+
+void MainWindow::fillDialogWithProductData(AddProductDialog *dialog, const QString& productId, const QString& productName)
+{
+    // База данных продуктов (должна быть синхронизирована с showProductDetails)
+    QMap<QString, QMap<QString, QString>> productsData;
+
+    productsData["M001"] = {
+        {"name", "Парацетамол"},
+        {"price", "15.50"},
+        {"country", "Россия"},
+        {"expiry", "2025-12-31"},
+        {"status", "В наличии"},
+        {"substance", "Парацетамол"},
+        {"form", "Таблетки"},
+        {"usage", "По 1 таблетке 3 раза в день"}
+    };
+
+    productsData["M002"] = {
+        {"name", "Ибупрофен"},
+        {"price", "18.75"},
+        {"country", "Россия"},
+        {"expiry", "2025-10-15"},
+        {"status", "В наличии"},
+        {"substance", "Ибупрофен"},
+        {"form", "Таблетки"},
+        {"usage", "По 1 таблетке 2-3 раза в день"}
+    };
+
+    // Добавьте остальные продукты...
+
+    if (productsData.contains(productId)) {
+        QMap<QString, QString> productInfo = productsData[productId];
+
+        // Преобразуем данные для диалога
+        double price = productInfo["price"].toDouble();
+        QDate expiryDate = QDate::fromString(productInfo["expiry"], "yyyy-MM-dd");
+        bool prescription = false; // Можно добавить в данные
+
+        // Заполняем диалог
+        dialog->setProductData(
+            productId,
+            productInfo["name"],
+            price,
+            productInfo["form"], // type
+            expiryDate,
+            productInfo["country"],
+            prescription,
+            productInfo["substance"],
+            productInfo["usage"]
+            );
+    }
 }
 
 void MainWindow::onDeleteProduct()
 {
-    QMessageBox::StandardButton reply = QMessageBox::question(this, "Удаление",
-                                                              "Вы уверены, что хотите удалить этот продукт?",
-                                                              QMessageBox::Yes | QMessageBox::No);
-
-    if (reply == QMessageBox::Yes) {
-        QMessageBox::information(this, "Удаление", "Продукт удален (заглушка)");
-        hideEditPanel();
-        onShowAllProducts(); // Возвращаемся к списку
+    QListWidgetItem *item = productsList->currentItem();
+    if (item) {
+        QString productName = item->text().left(item->text().indexOf(" ("));
+        int ret = QMessageBox::question(this, "Удаление",
+                                        "Вы уверены, что хотите удалить:\n" + productName + "?",
+                                        QMessageBox::Yes | QMessageBox::No);
+        if (ret == QMessageBox::Yes) {
+            delete productsList->takeItem(productsList->row(item));
+            hideEditPanel();
+            contentText->setVisible(true);
+            contentText->setPlainText("Выберите лекарство из списка для просмотра информации.");
+        }
     }
 }
 
@@ -457,3 +583,67 @@ void MainWindow::pushToUndoStack()
         undoStack.remove(0);
     }
 }
+
+void MainWindow::onItemSelected()
+{
+    // Проверяем, есть ли выбранные элементы
+    if (productsList->selectedItems().count() > 0)
+        showEditPanel();
+    else
+        hideEditPanel();
+}
+
+void MainWindow::performSearch(const QString &searchText)
+{
+    if (!productsList || !contentText) return;
+
+    // Показываем список, скрываем детальную информацию
+    productsList->setVisible(true);
+    contentText->setVisible(false);
+    hideEditPanel();
+
+    productsList->clear();
+    productsList->clearSelection();
+
+    // Тестовые данные для поиска
+    QMap<QString, QString> sampleProducts = {
+        {"M001", "Парацетамол (M001) - 15.50 руб."},
+        {"M002", "Ибупрофен (M002) - 18.75 руб."},
+        {"M003", "Аспирин (M003) - 12.30 руб."},
+        {"M004", "Амбробене (M004) - 45.30 руб."},
+        {"M005", "Нурофен (M005) - 22.40 руб."},
+        {"M006", "Анальгин (M006) - 8.90 руб."},
+        {"M007", "Цитрамон (M007) - 11.20 руб."}
+    };
+
+    // Поиск по названию и ID
+    QString searchLower = searchText.toLower();
+    bool found = false;
+
+    for (auto it = sampleProducts.begin(); it != sampleProducts.end(); ++it) {
+        QString productText = it.value();
+        if (productText.toLower().contains(searchLower)) {
+            QListWidgetItem *item = new QListWidgetItem(productText, productsList);
+            item->setData(Qt::UserRole, it.key());
+            found = true;
+        }
+    }
+
+    if (!found) {
+        // Если ничего не найдено
+        productsList->setVisible(false);
+        contentText->setVisible(true);
+        contentText->setHtml(
+            "<div style='text-align: center; padding: 50px; color: #666;'>"
+            "<h3 style='color: #F44336;'>Ничего не найдено</h3>"
+            "<p>По запросу: <b>\"" + searchText + "\"</b></p>"
+                           "<p>Попробуйте изменить запрос или посмотрите все лекарства</p>"
+                           "</div>"
+            );
+    } else {
+        // Показываем заголовок с результатами поиска
+        productsList->setVisible(true);
+        contentText->setVisible(false);
+    }
+}
+
