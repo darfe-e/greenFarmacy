@@ -72,3 +72,16 @@ CMakeLists.txt.user*
 *.dll
 *.exe
 
+
+# Debug and build files
+build*/
+debug/
+release/
+*.debug
+*.app
+*.exe
+*.dll
+*.so
+*.dylib
+*.o
+*.obj
