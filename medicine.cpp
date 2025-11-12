@@ -1,6 +1,8 @@
 #include "medicine.h"
 #include <algorithm>
 #include <sstream>
+#include "Exception/PharmacyExceptions/InvalidProductDataException.h"
+#include "Exception/safeinput.h"
 
 // Конструктор с параметрами
 Medicine::Medicine(std::string id, std::string name, double basePrice,
@@ -149,54 +151,58 @@ std::ostream& operator<<(std::ostream& os, const Medicine& med)
     return os;
 }
 
-// Оператор ввода
 std::istream& operator>>(std::istream& is, Medicine& med)
 {
-    // Читаем базовую информацию
-    is >> static_cast<MedicalProduct&>(med);
-
-    // Читаем специфичную для Medicine информацию
-    std::string prescriptionStr;
-    std::string temp;
-
-    // Пропускаем метку
-    std::getline(is, temp); // "Prescription: "
-    std::getline(is, prescriptionStr);
-    med.isPrescription = (prescriptionStr == "Yes");
-
-    // Active Substance
-    std::getline(is, temp); // "Active Substance: "
-    std::getline(is, med.activeSubstance);
-
-    // Instructions
-    std::getline(is, temp); // "Instructions: "
-    std::getline(is, med.instructions);
-
-    // Пропускаем Dosage Form и Administration Method (они виртуальные)
-    std::getline(is, temp); // "Dosage Form: "
-    std::getline(is, temp); // значение
-    std::getline(is, temp); // "Administration Method: "
-    std::getline(is, temp); // значение
-
-    // Очищаем аналоги (они будут устанавливаться отдельно)
-    med.analogues.clear();
-
-    // Пропускаем информацию об аналогах
-    std::getline(is, temp); // "Analogues (X):"
-    std::string line;
-    while (std::getline(is, line))
+    try
     {
-        if (line.empty() || line[0] != ' ')
+        // Читаем базовую информацию
+        is >> static_cast<MedicalProduct&>(med);
+
+        // Prescription
+        SafeInput::skipLabel(is); // "Prescription: "
+        med.isPrescription = SafeInput::readBoolean(is, "Prescription status");
+
+        // Active Substance
+        SafeInput::skipLabel(is); // "Active Substance: "
+        med.activeSubstance = SafeInput::readNonEmptyString(is, "Active substance");
+
+        // Instructions
+        SafeInput::skipLabel(is); // "Instructions: "
+        med.instructions = SafeInput::readNonEmptyString(is, "Instructions");
+
+        // Пропускаем виртуальные поля
+        SafeInput::skipLabel(is); // "Dosage Form: "
+        SafeInput::skipLabel(is); // значение
+        SafeInput::skipLabel(is); // "Administration Method: "
+        SafeInput::skipLabel(is); // значение
+
+        // Очищаем аналоги
+        med.analogues.clear();
+
+        // Пропускаем информацию об аналогах
+        std::string line;
+        std::getline(is, line); // "Analogues (X):"
+        while (std::getline(is, line))
         {
-            // Если строка не начинается с пробела, это следующий раздел
-            is.putback('\n');
-            for (auto it = line.rbegin(); it != line.rend(); ++it)
+            if (line.empty() || line[0] != ' ')
             {
-                is.putback(*it);
+                is.putback('\n');
+                for (auto it = line.rbegin(); it != line.rend(); ++it)
+                {
+                    is.putback(*it);
+                }
+                break;
             }
-            break;
         }
-        // Пропускаем строки аналогов
+
+    }
+    catch (const PharmacyException&)
+    {
+        throw;
+    }
+    catch (const std::exception& e)
+    {
+        throw InvalidProductDataException("medicine data", e.what());
     }
 
     return is;

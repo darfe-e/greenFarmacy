@@ -1,4 +1,7 @@
 #include "supply.h"
+#include "Exception/InventoryExceptions/InventoryException.h"
+#include "Exception/InventoryExceptions/NegativeQuantityException.h"
+#include "Exception/safeinput.h"
 #include <sstream>
 #include <stdexcept>
 
@@ -10,9 +13,9 @@ Supply::Supply(std::string id, SafeDate date,
     , destination(std::move(dest))
 {
     if (source.empty())
-        throw std::invalid_argument("Supply source cannot be empty");
+        throw InventoryException("Supply source cannot be empty");
     if (destination.empty())
-        throw std::invalid_argument("Supply destination cannot be empty");
+        throw InventoryException("Supply destination cannot be empty");
 }
 
 Supply::Supply()
@@ -37,33 +40,33 @@ std::string Supply::getOperationType() const
 void Supply::process()
 {
     if (getStatus() == "completed")
-        throw std::runtime_error("Supply operation already completed");
+        throw InventoryException("Supply operation already completed");
 
     if (getStatus() == "cancelled")
-        throw std::runtime_error("Supply operation is cancelled");
+        throw InventoryException("Supply operation is cancelled");
 
     if (getQuantity() <= 0)
-        throw std::runtime_error("Supply quantity must be positive");
+        throw NegativeQuantityException(getQuantity());
 
-    setStatus("completed");                       // Помечаем как завершенную
+    setStatus("completed");
 }
 
 Supply& Supply::operator=(const Supply& other)
 {
     if (this != &other)
     {
-        InventoryOperation::operator=(other);     // Присваиваем базовую часть
-        source = other.source;                    // Присваиваем источник
-        destination = other.destination;          // Присваиваем назначение
+        InventoryOperation::operator=(other);
+        source = other.source;
+        destination = other.destination;
     }
     return *this;
 }
 
 std::ostream& operator<<(std::ostream& os, const Supply& supply)
 {
-    os << static_cast<const InventoryOperation&>(supply);  // Выводим базовую часть
-    os << "Source: " << supply.source << "\n";             // Выводим источник
-    os << "Destination: " << supply.destination << "\n";   // Выводим назначение
+    os << static_cast<const InventoryOperation&>(supply);
+    os << "Source: " << supply.source << "\n";
+    os << "Destination: " << supply.destination << "\n";
     return os;
 }
 
@@ -71,31 +74,22 @@ std::istream& operator>>(std::istream& is, Supply& supply)
 {
     try
     {
-        is >> static_cast<InventoryOperation&>(supply);    // Читаем базовую часть
+        is >> static_cast<InventoryOperation&>(supply);
 
-        std::string temp;
+        SafeInput::skipLabel(is); // "Source: "
+        supply.source = SafeInput::readNonEmptyString(is, "Supply source");
 
-        std::getline(is, temp);                    // "Source: "
-        if (temp.find("Source:") != std::string::npos)
-            supply.source = temp.substr(temp.find("Source:") + 7);
-        else
-            std::getline(is, supply.source);
+        SafeInput::skipLabel(is); // "Destination: "
+        supply.destination = SafeInput::readNonEmptyString(is, "Supply destination");
 
-        std::getline(is, temp);                    // "Destination: "
-        if (temp.find("Destination:") != std::string::npos)
-            supply.destination = temp.substr(temp.find("Destination:") + 12);
-        else
-            std::getline(is, supply.destination);
-
-        if (supply.source.empty())
-            throw std::invalid_argument("Supply source cannot be empty");
-        if (supply.destination.empty())
-            throw std::invalid_argument("Supply destination cannot be empty");
+    }
+    catch (const InventoryException&)
+    {
+        throw;
     }
     catch (const std::exception& e)
     {
-        is.setstate(std::ios::failbit);
-        throw std::runtime_error("Error reading Supply data: " + std::string(e.what()));
+        throw InventoryException("Error reading supply data: " + std::string(e.what()));
     }
 
     return is;

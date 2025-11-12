@@ -28,6 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
 {
     setupUI();
     setupColors();
+    loadSampleData(); // Загружаем тестовые данные
     updateCompleter();
     hideEditPanel(); // Скрываем панель редактирования initially
 }
@@ -244,6 +245,52 @@ void MainWindow::setupColors()
         );
 }
 
+void MainWindow::loadSampleData()
+{
+    try
+    {
+        // Создаем тестовые данные
+        auto tablet1 = std::make_shared<Tablet>(
+            "M001", "Парацетамол", 15.50,
+            SafeDate(2026, 12, 31), "Россия",
+            false, "Парацетамол", "По 1 таблетке 3 раза в день",
+            20, 500.0, "пленочная"
+            );
+
+        auto tablet2 = std::make_shared<Tablet>(
+            "M002", "Ибупрофен", 18.75,
+            SafeDate(2026, 10, 15), "Россия",
+            false, "Ибупрофен", "По 1 таблетке 2-3 раза в день",
+            30, 400.0, "сахарная"
+            );
+
+        auto syrup1 = std::make_shared<Syrup>(
+            "M003", "Амбробене", 45.30,
+            SafeDate(2026, 8, 20), "Германия",
+            false, "Амброксол", "По 5 мл 3 раза в день",
+            100.0, true, "малиновый"
+            );
+
+        auto ointment1 = std::make_shared<Ointment>(
+            "M004", "Троксевазин", 32.80,
+            SafeDate(2026, 5, 10), "Болгария",
+            false, "Троксерутин", "Наносить тонким слоем 2 раза в день",
+            40.0, "гелевая"
+            );
+
+        // Добавляем в менеджер
+        pharmacyManager.addProduct(tablet1);
+        pharmacyManager.addProduct(tablet2);
+        pharmacyManager.addProduct(syrup1);
+        pharmacyManager.addProduct(ointment1);
+
+    }
+    catch (const std::exception& e)
+    {
+        QMessageBox::warning(this, "Ошибка", QString("Ошибка загрузки данных: %1").arg(e.what()));
+    }
+}
+
 void MainWindow::showProductList()
 {
     if (!productsList || !contentText) return;
@@ -254,68 +301,121 @@ void MainWindow::showProductList()
 
     productsList->clear();
 
-    // Заглушка с тестовыми данными
-    QStringList sampleProducts = {
-        "Парацетамол (M001) - 15.50 руб.",
-        "Ибупрофен (M002) - 18.75 руб.",
-        "Аспирин (M003) - 12.30 руб.",
-        "Амбробене (M004) - 45.30 руб.",
-        "Нурофен (M005) - 22.40 руб.",
-        "Анальгин (M006) - 8.90 руб.",
-        "Цитрамон (M007) - 11.20 руб."
-    };
+    try {
+        // ИСПОЛЬЗУЕМ РЕАЛЬНЫЕ ДАННЫЕ ИЗ PHARMACYMANAGER
+        auto allProducts = pharmacyManager.getAllProducts();
 
-    for (const QString& product : sampleProducts) {
-        QListWidgetItem *item = new QListWidgetItem(product, productsList);
-        item->setData(Qt::UserRole, product.mid(product.indexOf("(") + 1, 4));
+        if (allProducts.empty()) {
+            productsList->setVisible(false);
+            contentText->setVisible(true);
+            contentText->setPlainText("Нет доступных лекарств. Добавьте новое лекарство.");
+            return;
+        }
+
+        for (const auto& product : allProducts) {
+            QString displayText = QString("%1 (%2) - %3 руб.")
+                                      .arg(QString::fromStdString(product->getName()))
+                                      .arg(QString::fromStdString(product->getId()))
+                                      .arg(product->getBasePrice(), 0, 'f', 2);
+
+            QListWidgetItem *item = new QListWidgetItem(displayText, productsList);
+            item->setData(Qt::UserRole, QString::fromStdString(product->getId()));
+        }
+
+    } catch (const std::exception& e) {
+        QMessageBox::warning(this, "Ошибка", QString("Ошибка загрузки списка: %1").arg(e.what()));
+
+        // Fallback: показать сообщение об ошибке
+        productsList->setVisible(false);
+        contentText->setVisible(true);
+        contentText->setPlainText("Ошибка загрузки данных: " + QString(e.what()));
     }
 }
 
 void MainWindow::showProductDetails(const QString& productId, const QString& productName)
 {
-    if (!contentText) return;
+    Q_UNUSED(productName); // Не используем, но оставляем для совместимости
 
-    // Скрываем список и показываем текстовое поле с деталями
     productsList->setVisible(false);
     contentText->setVisible(true);
 
-    // Формируем детальную информацию о продукте
+    try {
+        auto product = pharmacyManager.getProduct(productId.toStdString());
+        if (product) {
+            QString details = formatProductDetails(product);
+            contentText->setHtml(details);
+        } else {
+            contentText->setPlainText("Лекарство не найдено.");
+        }
+    } catch (const std::exception& e) {
+        contentText->setPlainText(QString("Ошибка загрузки данных: %1").arg(e.what()));
+    }
+}
+
+QString MainWindow::formatProductDetails(std::shared_ptr<MedicalProduct> product)
+{
     QString details;
 
-    if (productId == "M001") {
-        details = QString(
-            "# Информация\n\n"
-            "## Парацетамол\n"
-            "**ID:** M001\n"
-            "**Название:** Парацетамол\n"
-            "**Цена:** 15.50 руб.\n"
-            "**Страна:** Россия\n"
-            "**Срок годности:** 2025-12-31\n"
-            "**Статус:** ✓ В наличии\n"
-            "**Активное вещество:** Парацетамол\n"
-            "**Форма выпуска:** Таблетки\n"
-            "**Способ применения:** По 1 таблетке 3 раза в день\n\n"
-            "[Изменение]"
-            );
-    } else if (productId == "M002") {
-        details = QString(
-            "# Информация\n\n"
-            "## Ибупрофен\n"
-            "**ID:** M002\n"
-            "**Название:** Ибупрофен\n"
-            "**Цена:** 18.75 руб.\n"
-            "**Страна:** Россия\n"
-            "**Срок годности:** 2025-10-15\n"
-            "**Статус:** ✓ В наличии\n"
-            "**Активное вещество:** Ибупрофен\n"
-            "**Форма выпуска:** Таблетки\n"
-            "**Способ применения:** По 1 таблетке 2-3 раза в день\n\n"
-            "[Изменение]"
-            );
-    }
-    // Добавьте остальные продукты по аналогии...
+    // Базовая информация
+    details += "<div style='font-family: Arial, sans-serif;'>";
+    details += "<h1 style='color: #2E7D32;'>" + QString::fromStdString(product->getName()) + "</h1>";
+    details += "<div style='background: #f5f5f5; padding: 15px; border-radius: 5px;'>";
+    details += "<h3 style='color: #1976D2;'>Основная информация</h3>";
+    details += "<table style='width: 100%;'>";
+    details += "<tr><td style='width: 200px; padding: 5px;'><b>ID:</b></td><td>" + QString::fromStdString(product->getId()) + "</td></tr>";
+    details += "<tr><td style='padding: 5px;'><b>Цена:</b></td><td>" + QString::number(product->getBasePrice(), 'f', 2) + " руб.</td></tr>";
+    details += "<tr><td style='padding: 5px;'><b>Страна:</b></td><td>" + QString::fromStdString(product->getManufacturerCountry()) + "</td></tr>";
+    details += "<tr><td style='padding: 5px;'><b>Срок годности:</b></td><td>" + QString::fromStdString(product->getExpirationDate()) + "</td></tr>"; // Убрано .toString()
+    details += "</table>";
+    details += "</div>";
 
-    contentText->setHtml("<pre>" + details + "</pre>");
+    // Информация о лекарстве (если это Medicine)
+    if (auto medicine = std::dynamic_pointer_cast<Medicine>(product)) {
+        details += "<div style='background: #E3F2FD; padding: 15px; border-radius: 5px; margin-top: 10px;'>";
+        details += "<h3 style='color: #1976D2;'>Лекарственная информация</h3>";
+        details += "<table style='width: 100%;'>";
+        details += "<tr><td style='width: 200px; padding: 5px;'><b>Активное вещество:</b></td><td>" + QString::fromStdString(medicine->getActiveSubstance()) + "</td></tr>";
+        details += "<tr><td style='padding: 5px;'><b>Рецептурный:</b></td><td>" + QString(medicine->getIsPrescription() ? "Да" : "Нет") + "</td></tr>"; // Добавлен QString()
+        details += "<tr><td style='padding: 5px;'><b>Инструкция:</b></td><td>" + QString::fromStdString(medicine->getInstructions()) + "</td></tr>";
+        details += "<tr><td style='padding: 5px;'><b>Форма выпуска:</b></td><td>" + QString::fromStdString(medicine->getDosageForm()) + "</td></tr>";
+        details += "<tr><td style='padding: 5px;'><b>Способ применения:</b></td><td>" + QString::fromStdString(medicine->getAdministrationMethod()) + "</td></tr>";
+        details += "</table>";
+        details += "</div>";
+    }
+
+    // Специфичная информация для разных типов
+    if (auto tablet = std::dynamic_pointer_cast<Tablet>(product)) {
+        details += "<div style='background: #FFF3E0; padding: 15px; border-radius: 5px; margin-top: 10px;'>";
+        details += "<h3 style='color: #EF6C00;'>Характеристики таблеток</h3>";
+        details += "<table style='width: 100%;'>";
+        details += "<tr><td style='width: 200px; padding: 5px;'><b>Таблеток в упаковке:</b></td><td>" + QString::number(tablet->getUnitsPerPackage()) + "</td></tr>";
+        details += "<tr><td style='padding: 5px;'><b>Дозировка:</b></td><td>" + QString::number(tablet->getDosageMg()) + " мг</td></tr>"; // Исправлено getDosageMe() на getDosageMg()
+        details += "<tr><td style='padding: 5px;'><b>Оболочка:</b></td><td>" + QString::fromStdString(tablet->getCoating()) + "</td></tr>";
+        details += "</table>";
+        details += "</div>";
+    }
+    else if (auto syrup = std::dynamic_pointer_cast<Syrup>(product)) {
+        details += "<div style='background: #FFF3E0; padding: 15px; border-radius: 5px; margin-top: 10px;'>";
+        details += "<h3 style='color: #EF6C00;'>Характеристики сиропа</h3>";
+        details += "<table style='width: 100%;'>";
+        details += "<tr><td style='width: 200px; padding: 5px;'><b>Объем:</b></td><td>" + QString::number(syrup->getVolumeMl()) + " мл</td></tr>"; // Исправлено getVolumeM1() на getVolumeMl()
+        details += "<tr><td style='padding: 5px;'><b>Содержит сахар:</b></td><td>" + QString(syrup->getHasSugar() ? "Да" : "Нет") + "</td></tr>"; // Добавлен QString()
+        details += "<tr><td style='padding: 5px;'><b>Вкус:</b></td><td>" + QString::fromStdString(syrup->getFlavor()) + "</td></tr>";
+        details += "</table>";
+        details += "</div>";
+    }
+    else if (auto ointment = std::dynamic_pointer_cast<Ointment>(product)) {
+        details += "<div style='background: #FFF3E0; padding: 15px; border-radius: 5px; margin-top: 10px;'>";
+        details += "<h3 style='color: #EF6C00;'>Характеристики мази</h3>";
+        details += "<table style='width: 100%;'>";
+        details += "<tr><td style='width: 200px; padding: 5px;'><b>Вес:</b></td><td>" + QString::number(ointment->getWeightG()) + " г</td></tr>";
+        details += "<tr><td style='padding: 5px;'><b>Тип основы:</b></td><td>" + QString::fromStdString(ointment->getBaseType()) + "</td></tr>";
+        details += "</table>";
+        details += "</div>";
+    }
+
+    details += "</div>";
+    return details;
 }
 
 void MainWindow::showEditPanel()
@@ -337,9 +437,20 @@ void MainWindow::hideEditPanel()
 void MainWindow::updateCompleter()
 {
     QStringList wordList;
-    wordList << "Парацетамол" << "Ибупрофен" << "Аспирин" << "Амбробене"
-             << "Нурофен" << "Анальгин" << "Цитрамон"
-             << "M001" << "M002" << "M003" << "M004" << "M005" << "M006" << "M007";
+
+    try {
+        auto allProducts = pharmacyManager.getAllProducts();
+        for (const auto& product : allProducts) {
+            wordList << QString::fromStdString(product->getName());
+            wordList << QString::fromStdString(product->getId());
+
+            if (auto medicine = std::dynamic_pointer_cast<Medicine>(product)) {
+                wordList << QString::fromStdString(medicine->getActiveSubstance());
+            }
+        }
+    } catch (const std::exception& e) {
+        QMessageBox::warning(this, "Ошибка", QString("Ошибка обновления автодополнения: %1").arg(e.what()));
+    }
 
     searchCompleter->setModel(new QStringListModel(wordList, searchCompleter));
 }
@@ -374,16 +485,23 @@ void MainWindow::onSearchEnterPressed()
 
 void MainWindow::onShowAllProducts()
 {
-    currentFilter.clear();
-    if (searchEdit) {
-        searchEdit->clear();
-    }
-    showProductList();
-    hideEditPanel(); // Скрываем панель при показе всего списка
+    productsList->setVisible(true);
+    contentText->setVisible(false);
+    productsList->clear();
 
-    // Сбрасываем текст контента
-    if (contentText) {
-        contentText->setVisible(false);
+    try {
+        auto allProducts = pharmacyManager.getAllProducts();
+        for (const auto& product : allProducts) {
+            QString displayText = QString("%1 (%2) - %3 руб.")
+                                      .arg(QString::fromStdString(product->getName()))
+                                      .arg(QString::fromStdString(product->getId()))
+                                      .arg(product->getBasePrice(), 0, 'f', 2);
+
+            QListWidgetItem *item = new QListWidgetItem(displayText, productsList);
+            item->setData(Qt::UserRole, QString::fromStdString(product->getId()));
+        }
+    } catch (const std::exception& e) {
+        QMessageBox::warning(this, "Ошибка", QString("Ошибка загрузки списка: %1").arg(e.what()));
     }
 }
 
@@ -397,6 +515,7 @@ void MainWindow::onProductSelected(QListWidgetItem *item)
     showProductDetails(productId, productName);
     showEditPanel();
 }
+
 
 void MainWindow::onShowSupplies()
 {
@@ -430,58 +549,228 @@ void MainWindow::onShowPharmacyAvailability()
 
 void MainWindow::onAddProduct()
 {
-    AddProductDialog dialog(this);
-    dialog.exec();
-}
-
-void MainWindow::onEditProduct()
-{
-    QListWidgetItem *item = productsList->currentItem();
-    if (!item) return;
-
-    QString productId = item->data(Qt::UserRole).toString();
-
     AddProductDialog *dialog = new AddProductDialog(this);
-    dialog->setEditMode(true);
-    fillDialogWithProductData(dialog, productId, "");
+    dialog->setEditMode(false);
 
     if (dialog->exec() == QDialog::Accepted) {
-        // Получаем обновленные данные из диалога
-        QString newId = dialog->getId();
-        QString newName = dialog->getName();
-        double newPrice = dialog->getPrice();
-        QString newType = dialog->getType();
+        try {
+            // Создаем новый продукт на основе данных из диалога
+            std::shared_ptr<MedicalProduct> newProduct;
 
-        // Обновляем элемент в списке
-        QString newText = QString("%1 (%2) - %3 руб.").arg(newName).arg(newId).arg(newPrice, 0, 'f', 2);
-        item->setText(newText);
-        item->setData(Qt::UserRole, newId);
+            QString type = dialog->getType();
+            QString id = dialog->getId();
+            QString name = dialog->getName();
+            double price = dialog->getPrice();
+            QDate expiryDate = dialog->getExpiryDate();
+            QString country = dialog->getCountry();
+            bool prescription = dialog->isPrescription();
+            QString substance = dialog->getSubstance();
+            QString instructions = dialog->getInstructions();
 
-        // Показываем сообщение об успехе ПОСЛЕ закрытия диалога
-        QMessageBox::information(this, "Успех", "Данные лекарства обновлены!");
+            SafeDate safeDate(expiryDate.year(), expiryDate.month(), expiryDate.day());
 
-        // Обновляем детальную информацию
-        onProductSelected(item);
+            if (type == "Таблетки") {
+                newProduct = std::make_shared<Tablet>(
+                    id.toStdString(), name.toStdString(), price,
+                    safeDate, country.toStdString(),
+                    prescription, substance.toStdString(), instructions.toStdString(),
+                    dialog->getTabletUnits(),
+                    dialog->getTabletDosage(),
+                    dialog->getTabletCoating().toStdString()
+                    );
+            } else if (type == "Сироп") {
+                newProduct = std::make_shared<Syrup>(
+                    id.toStdString(), name.toStdString(), price,
+                    safeDate, country.toStdString(),
+                    prescription, substance.toStdString(), instructions.toStdString(),
+                    dialog->getSyrupVolume(),
+                    dialog->getSyrupHasSugar(),
+                    dialog->getSyrupFlavor().toStdString()
+                    );
+            } else if (type == "Мазь") {
+                newProduct = std::make_shared<Ointment>(
+                    id.toStdString(), name.toStdString(), price,
+                    safeDate, country.toStdString(),
+                    prescription, substance.toStdString(), instructions.toStdString(),
+                    dialog->getOintmentWeight(),
+                    dialog->getOintmentBase().toStdString()
+                    );
+            }
+
+            if (newProduct) {
+                pharmacyManager.addProduct(newProduct);
+                updateCompleter();
+                onShowAllProducts();
+
+                QMessageBox::information(this, "Успех", "Лекарство успешно добавлено!");
+            }
+
+        } catch (const std::exception& e) {
+            QMessageBox::warning(this, "Ошибка", QString("Ошибка добавления лекарства: %1").arg(e.what()));
+        }
     }
 
     delete dialog;
 }
 
+void MainWindow::onEditProduct()
+{
+    QListWidgetItem *item = productsList->currentItem();
+    if (!item) {
+        QMessageBox::information(this, "Информация", "Выберите лекарство для редактирования.");
+        return;
+    }
+
+    QString productId = item->data(Qt::UserRole).toString();
+    saveProductChanges(productId);
+}
+
 void MainWindow::saveProductChanges(const QString& productId)
 {
-    // Здесь должна быть логика сохранения изменений в вашей модели данных
-    // Пока просто обновим отображение
+    try {
+        // Получаем текущий продукт
+        auto product = pharmacyManager.getProduct(productId.toStdString());
+        if (!product) {
+            QMessageBox::warning(this, "Ошибка", "Продукт не найден");
+            return;
+        }
 
-    QListWidgetItem *item = productsList->currentItem();
-    if (item) {
-        // Обновляем текст в списке
-        // В реальном приложении здесь нужно получить новые данные из диалога
-        // и обновить элемент списка
-        QMessageBox::information(this, "Сохранение",
-                                 "Изменения для " + productId + " сохранены (заглушка)");
+        // Создаем диалог редактирования
+        AddProductDialog *dialog = new AddProductDialog(this);
+        dialog->setEditMode(true);
 
-        // Обновляем детальную информацию
-        onProductSelected(item);
+        // Заполняем диалог текущими данными продукта
+        if (auto medicine = std::dynamic_pointer_cast<Medicine>(product)) {
+            // Преобразуем строку с датой в QDate
+            std::string expDateStr = product->getExpirationDate();
+            QDate expiryDate = QDate::fromString(QString::fromStdString(expDateStr), "yyyy-MM-dd");
+
+            // Если парсинг не удался, используем текущую дату + 2 года
+            if (!expiryDate.isValid()) {
+                expiryDate = QDate::currentDate().addYears(2);
+            }
+
+            if (auto tablet = std::dynamic_pointer_cast<Tablet>(product)) {
+                dialog->setProductData(
+                    QString::fromStdString(product->getId()),
+                    QString::fromStdString(product->getName()),
+                    product->getBasePrice(),
+                    QString::fromStdString(medicine->getDosageForm()),
+                    expiryDate,
+                    QString::fromStdString(product->getManufacturerCountry()),
+                    medicine->getIsPrescription(),
+                    QString::fromStdString(medicine->getActiveSubstance()),
+                    QString::fromStdString(medicine->getInstructions()),
+                    // Специфичные поля для таблеток
+                    tablet->getUnitsPerPackage(),
+                    tablet->getDosageMg(),
+                    QString::fromStdString(tablet->getCoating())
+                    );
+            }
+            else if (auto syrup = std::dynamic_pointer_cast<Syrup>(product)) {
+                dialog->setProductData(
+                    QString::fromStdString(product->getId()),
+                    QString::fromStdString(product->getName()),
+                    product->getBasePrice(),
+                    QString::fromStdString(medicine->getDosageForm()),
+                    expiryDate,
+                    QString::fromStdString(product->getManufacturerCountry()),
+                    medicine->getIsPrescription(),
+                    QString::fromStdString(medicine->getActiveSubstance()),
+                    QString::fromStdString(medicine->getInstructions()),
+                    // Специфичные поля для сиропа (таблеточные параметры - по умолчанию)
+                    0, 0.0, "",
+                    syrup->getVolumeMl(),
+                    syrup->getHasSugar(),
+                    QString::fromStdString(syrup->getFlavor())
+                    );
+            }
+            else if (auto ointment = std::dynamic_pointer_cast<Ointment>(product)) {
+                dialog->setProductData(
+                    QString::fromStdString(product->getId()),
+                    QString::fromStdString(product->getName()),
+                    product->getBasePrice(),
+                    QString::fromStdString(medicine->getDosageForm()),
+                    expiryDate,
+                    QString::fromStdString(product->getManufacturerCountry()),
+                    medicine->getIsPrescription(),
+                    QString::fromStdString(medicine->getActiveSubstance()),
+                    QString::fromStdString(medicine->getInstructions()),
+                    // Специфичные поля для мази (таблеточные и сиропные параметры - по умолчанию)
+                    0, 0.0, "",
+                    0.0, false, "",
+                    ointment->getWeightG(),
+                    QString::fromStdString(ointment->getBaseType())
+                    );
+            }
+        }
+
+        // Показываем диалог и ждем результат
+        if (dialog->exec() == QDialog::Accepted) {
+            // Создаем обновленный продукт на основе данных из диалога
+            std::shared_ptr<MedicalProduct> updatedProduct;
+
+            QString type = dialog->getType();
+            QString id = dialog->getId();
+            QString name = dialog->getName();
+            double price = dialog->getPrice();
+            QDate expiryDate = dialog->getExpiryDate();
+            QString country = dialog->getCountry();
+            bool prescription = dialog->isPrescription();
+            QString substance = dialog->getSubstance();
+            QString instructions = dialog->getInstructions();
+
+            SafeDate safeDate(expiryDate.year(), expiryDate.month(), expiryDate.day());
+
+            // Создаем продукт соответствующего типа ИСПОЛЬЗУЯ ДАННЫЕ ИЗ ДИАЛОГА
+            if (type == "Таблетки") {
+                updatedProduct = std::make_shared<Tablet>(
+                    id.toStdString(), name.toStdString(), price,
+                    safeDate, country.toStdString(),
+                    prescription, substance.toStdString(), instructions.toStdString(),
+                    dialog->getTabletUnits(),        // ИЗ ДИАЛОГА
+                    dialog->getTabletDosage(),       // ИЗ ДИАЛОГА
+                    dialog->getTabletCoating().toStdString() // ИЗ ДИАЛОГА
+                    );
+            } else if (type == "Сироп") {
+                updatedProduct = std::make_shared<Syrup>(
+                    id.toStdString(), name.toStdString(), price,
+                    safeDate, country.toStdString(),
+                    prescription, substance.toStdString(), instructions.toStdString(),
+                    dialog->getSyrupVolume(),        // ИЗ ДИАЛОГА
+                    dialog->getSyrupHasSugar(),      // ИЗ ДИАЛОГА
+                    dialog->getSyrupFlavor().toStdString() // ИЗ ДИАЛОГА
+                    );
+            } else if (type == "Мазь") {
+                updatedProduct = std::make_shared<Ointment>(
+                    id.toStdString(), name.toStdString(), price,
+                    safeDate, country.toStdString(),
+                    prescription, substance.toStdString(), instructions.toStdString(),
+                    dialog->getOintmentWeight(),     // ИЗ ДИАЛОГА
+                    dialog->getOintmentBase().toStdString() // ИЗ ДИАЛОГА
+                    );
+            }
+
+            // Обновляем продукт в менеджере
+            if (updatedProduct) {
+                pharmacyManager.updateProduct(updatedProduct);
+
+                // Обновляем отображение
+                QString productName = QString::fromStdString(updatedProduct->getName());
+                showProductDetails(productId, productName);
+                showProductList(); // Обновляем список продуктов
+
+                QMessageBox::information(this, "Успех", "Изменения сохранены");
+            } else {
+                QMessageBox::warning(this, "Ошибка", "Не удалось обновить продукт");
+            }
+        }
+
+        delete dialog; // Используйте delete вместо deleteLater для диалогов
+
+    } catch (const std::exception& e) {
+        QMessageBox::warning(this, "Ошибка",
+                             QString("Ошибка при сохранении изменений: %1").arg(e.what()));
     }
 }
 
@@ -540,19 +829,33 @@ void MainWindow::fillDialogWithProductData(AddProductDialog *dialog, const QStri
 void MainWindow::onDeleteProduct()
 {
     QListWidgetItem *item = productsList->currentItem();
-    if (item) {
-        QString productName = item->text().left(item->text().indexOf(" ("));
-        int ret = QMessageBox::question(this, "Удаление",
-                                        "Вы уверены, что хотите удалить:\n" + productName + "?",
-                                        QMessageBox::Yes | QMessageBox::No);
-        if (ret == QMessageBox::Yes) {
+    if (!item) {
+        QMessageBox::information(this, "Информация", "Выберите лекарство для удаления.");
+        return;
+    }
+
+    QString productId = item->data(Qt::UserRole).toString();
+    QString productName = item->text().left(item->text().indexOf(" ("));
+
+    int ret = QMessageBox::question(this, "Удаление",
+                                    "Вы уверены, что хотите удалить:\n" + productName + "?",
+                                    QMessageBox::Yes | QMessageBox::No);
+    if (ret == QMessageBox::Yes) {
+        try {
+            pharmacyManager.removeProduct(productId.toStdString());
             delete productsList->takeItem(productsList->row(item));
-            hideEditPanel();
+            updateCompleter();
+
             contentText->setVisible(true);
             contentText->setPlainText("Выберите лекарство из списка для просмотра информации.");
+
+        } catch (const std::exception& e) {
+            QMessageBox::warning(this, "Ошибка", QString("Ошибка удаления: %1").arg(e.what()));
         }
     }
 }
+
+
 
 void MainWindow::onSaveChanges()
 {
@@ -595,55 +898,43 @@ void MainWindow::onItemSelected()
 
 void MainWindow::performSearch(const QString &searchText)
 {
-    if (!productsList || !contentText) return;
+    if (searchText.isEmpty()) {
+        onShowAllProducts();
+        return;
+    }
 
-    // Показываем список, скрываем детальную информацию
     productsList->setVisible(true);
     contentText->setVisible(false);
-    hideEditPanel();
-
     productsList->clear();
-    productsList->clearSelection();
 
-    // Тестовые данные для поиска
-    QMap<QString, QString> sampleProducts = {
-        {"M001", "Парацетамол (M001) - 15.50 руб."},
-        {"M002", "Ибупрофен (M002) - 18.75 руб."},
-        {"M003", "Аспирин (M003) - 12.30 руб."},
-        {"M004", "Амбробене (M004) - 45.30 руб."},
-        {"M005", "Нурофен (M005) - 22.40 руб."},
-        {"M006", "Анальгин (M006) - 8.90 руб."},
-        {"M007", "Цитрамон (M007) - 11.20 руб."}
-    };
+    try {
+        auto searchResults = pharmacyManager.searchProducts(searchText.toStdString());
+        bool found = false;
 
-    // Поиск по названию и ID
-    QString searchLower = searchText.toLower();
-    bool found = false;
+        for (const auto& product : searchResults) {
+            QString displayText = QString("%1 (%2) - %3 руб.")
+                                      .arg(QString::fromStdString(product->getName()))
+                                      .arg(QString::fromStdString(product->getId()))
+                                      .arg(product->getBasePrice(), 0, 'f', 2);
 
-    for (auto it = sampleProducts.begin(); it != sampleProducts.end(); ++it) {
-        QString productText = it.value();
-        if (productText.toLower().contains(searchLower)) {
-            QListWidgetItem *item = new QListWidgetItem(productText, productsList);
-            item->setData(Qt::UserRole, it.key());
+            QListWidgetItem *item = new QListWidgetItem(displayText, productsList);
+            item->setData(Qt::UserRole, QString::fromStdString(product->getId()));
             found = true;
         }
-    }
 
-    if (!found) {
-        // Если ничего не найдено
-        productsList->setVisible(false);
-        contentText->setVisible(true);
-        contentText->setHtml(
-            "<div style='text-align: center; padding: 50px; color: #666;'>"
-            "<h3 style='color: #F44336;'>Ничего не найдено</h3>"
-            "<p>По запросу: <b>\"" + searchText + "\"</b></p>"
-                           "<p>Попробуйте изменить запрос или посмотрите все лекарства</p>"
-                           "</div>"
-            );
-    } else {
-        // Показываем заголовок с результатами поиска
-        productsList->setVisible(true);
-        contentText->setVisible(false);
+        if (!found) {
+            productsList->setVisible(false);
+            contentText->setVisible(true);
+            contentText->setHtml(
+                "<div style='text-align: center; padding: 50px; color: #666;'>"
+                "<h3 style='color: #F44336;'>Ничего не найдено</h3>"
+                "<p>По запросу: <b>\"" + searchText + "\"</b></p>"
+                               "<p>Попробуйте изменить запрос или посмотрите все лекарства</p>"
+                               "</div>"
+                );
+        }
+
+    } catch (const std::exception& e) {
+        QMessageBox::warning(this, "Ошибка", QString("Ошибка поиска: %1").arg(e.what()));
     }
 }
-

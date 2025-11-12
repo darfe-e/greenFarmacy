@@ -12,53 +12,77 @@ PharmacyManager::PharmacyManager()
 void PharmacyManager::addProduct(std::shared_ptr<MedicalProduct> product)
 {
     if (!product)
-        throw std::invalid_argument("Product cannot be null");
+        throw InvalidProductDataException("product", "cannot be null");
+
+    if (productsCatalog.find(product->getId()) != productsCatalog.end())
+        throw DuplicateProductException(product->getId());
 
     productsCatalog[product->getId()] = product;
 }
 
 void PharmacyManager::removeProduct(const std::string& productId)
 {
+    if (productId.empty())
+        throw InvalidProductDataException("product ID", "cannot be empty");
+
     auto it = productsCatalog.find(productId);
-    if (it != productsCatalog.end())
-        productsCatalog.erase(it);
+    if (it == productsCatalog.end())
+        throw ProductNotFoundException(productId);
+
+    productsCatalog.erase(it);
 }
 
 std::shared_ptr<MedicalProduct> PharmacyManager::getProduct(const std::string& productId) const
 {
+    if (productId.empty())
+        throw InvalidProductDataException("product ID", "cannot be empty");
+
     auto it = productsCatalog.find(productId);
-    if (it != productsCatalog.end())
-        return it->second;
-    return nullptr;
+    if (it == productsCatalog.end())
+        throw ProductNotFoundException(productId);
+
+    return it->second;
 }
 
 void PharmacyManager::addPharmacy(std::shared_ptr<Pharmacy> pharmacy)
 {
     if (!pharmacy)
-        throw std::invalid_argument("Pharmacy cannot be null");
+        throw InvalidProductDataException("pharmacy", "cannot be null");
+
+    if (pharmacies.find(pharmacy->getId()) != pharmacies.end())
+        throw DuplicateProductException("Pharmacy with ID: " + pharmacy->getId());
 
     pharmacies[pharmacy->getId()] = pharmacy;
 }
 
 void PharmacyManager::removePharmacy(const std::string& pharmacyId)
 {
+    if (pharmacyId.empty())
+        throw InvalidProductDataException("pharmacy ID", "cannot be empty");
+
     auto it = pharmacies.find(pharmacyId);
-    if (it != pharmacies.end())
-        pharmacies.erase(it);
+    if (it == pharmacies.end())
+        throw ProductNotFoundException("Pharmacy with ID: " + pharmacyId);
+
+    pharmacies.erase(it);
 }
 
 std::shared_ptr<Pharmacy> PharmacyManager::getPharmacy(const std::string& pharmacyId) const
 {
+    if (pharmacyId.empty())
+        throw InvalidProductDataException("pharmacy ID", "cannot be empty");
+
     auto it = pharmacies.find(pharmacyId);
-    if (it != pharmacies.end())
-        return it->second;
-    return nullptr;
+    if (it == pharmacies.end())
+        throw ProductNotFoundException("Pharmacy with ID: " + pharmacyId);
+
+    return it->second;
 }
 
 void PharmacyManager::addOperation(std::shared_ptr<InventoryOperation> operation)
 {
     if (!operation)
-        throw std::invalid_argument("Operation cannot be null");
+        throw InvalidProductDataException("operation", "cannot be null");
 
     operations.push_back(operation);
 }
@@ -67,10 +91,9 @@ std::vector<std::shared_ptr<Supply>> PharmacyManager::getSupplyOperations() cons
 {
     std::vector<std::shared_ptr<Supply>> supplies;
     for (const auto& operation : operations)
-    {
         if (auto supply = std::dynamic_pointer_cast<Supply>(operation))
             supplies.push_back(supply);
-    }
+
     return supplies;
 }
 
@@ -78,10 +101,9 @@ std::vector<std::shared_ptr<Return>> PharmacyManager::getReturnOperations() cons
 {
     std::vector<std::shared_ptr<Return>> returns;
     for (const auto& operation : operations)
-    {
         if (auto returnOp = std::dynamic_pointer_cast<Return>(operation))
             returns.push_back(returnOp);
-    }
+
     return returns;
 }
 
@@ -89,41 +111,44 @@ std::vector<std::shared_ptr<WriteOff>> PharmacyManager::getWriteOffOperations() 
 {
     std::vector<std::shared_ptr<WriteOff>> writeOffs;
     for (const auto& operation : operations)
-    {
         if (auto writeOff = std::dynamic_pointer_cast<WriteOff>(operation))
             writeOffs.push_back(writeOff);
-    }
+
     return writeOffs;
 }
 
-
 std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProductsByCountry(const std::string& country) const
 {
+    if (country.empty())
+        throw InvalidProductDataException("country", "cannot be empty");
+
     std::vector<std::shared_ptr<MedicalProduct>> result;
     for (const auto& pair : productsCatalog)
-    {
         if (pair.second->getManufacturerCountry().find(country) != std::string::npos)
             result.push_back(pair.second);
-    }
+
     return result;
 }
 
 std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProductsBySubstance(const std::string& substance) const
 {
+    if (substance.empty())
+        throw InvalidProductDataException("substance", "cannot be empty");
+
     std::vector<std::shared_ptr<MedicalProduct>> result;
     for (const auto& pair : productsCatalog)
-    {
         if (auto medicine = std::dynamic_pointer_cast<Medicine>(pair.second))
-        {
             if (medicine->getActiveSubstance().find(substance) != std::string::npos)
                 result.push_back(medicine);
-        }
-    }
+
     return result;
 }
 
 std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProducts(const std::string& searchTerm) const
 {
+    if (searchTerm.empty())
+        throw InvalidProductDataException("search term", "cannot be empty");
+
     std::vector<std::shared_ptr<MedicalProduct>> result;
     for (const auto& pair : productsCatalog)
     {
@@ -131,20 +156,19 @@ std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProducts(con
         if (product->getName().find(searchTerm) != std::string::npos ||
             product->getId().find(searchTerm) != std::string::npos ||
             product->getManufacturerCountry().find(searchTerm) != std::string::npos)
-        {
             result.push_back(product);
-        }
         else if (auto medicine = std::dynamic_pointer_cast<Medicine>(product))
-        {
             if (medicine->getActiveSubstance().find(searchTerm) != std::string::npos)
                 result.push_back(medicine);
-        }
     }
     return result;
 }
 
 std::map<std::string, int> PharmacyManager::getProductAvailability(const std::string& productId) const
 {
+    if (productId.empty())
+        throw InvalidProductDataException("product ID", "cannot be empty");
+
     std::map<std::string, int> availability;
     for (const auto& pharmacyPair : pharmacies)
     {
@@ -157,6 +181,9 @@ std::map<std::string, int> PharmacyManager::getProductAvailability(const std::st
 
 std::vector<std::pair<std::string, std::string>> PharmacyManager::findProductInPharmacies(const std::string& productNameOrId) const
 {
+    if (productNameOrId.empty())
+        throw InvalidProductDataException("product name or ID", "cannot be empty");
+
     std::vector<std::pair<std::string, std::string>> result;
 
     for (const auto& pharmacyPair : pharmacies)
@@ -172,11 +199,14 @@ std::vector<std::pair<std::string, std::string>> PharmacyManager::findProductInP
 
 std::vector<std::shared_ptr<Medicine>> PharmacyManager::getAnalogues(const std::string& productId) const
 {
+    if (productId.empty())
+        throw InvalidProductDataException("product ID", "cannot be empty");
+
     std::vector<std::shared_ptr<Medicine>> analogues;
     auto original = std::dynamic_pointer_cast<Medicine>(getProduct(productId));
 
     if (!original)
-        return analogues;
+        throw InvalidProductDataException("product", "is not a medicine or not found");
 
     for (const auto& productPair : productsCatalog)
     {
@@ -191,11 +221,13 @@ std::vector<std::shared_ptr<Medicine>> PharmacyManager::getAnalogues(const std::
 
 std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProductsByName(const std::string& name) const
 {
+    if (name.empty())
+        throw InvalidProductDataException("name", "cannot be empty");
+
     std::vector<std::shared_ptr<MedicalProduct>> result;
     for (const auto& pair : productsCatalog)
     {
         auto product = pair.second;
-        // Поиск по названию, ID или стране
         if (product->getName().find(name) != std::string::npos ||
             product->getId().find(name) != std::string::npos ||
             product->getManufacturerCountry().find(name) != std::string::npos)
@@ -209,6 +241,7 @@ std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::getAllProducts() c
     std::vector<std::shared_ptr<MedicalProduct>> result;
     for (const auto& pair : productsCatalog)
         result.push_back(pair.second);
+
     return result;
 }
 
@@ -245,3 +278,17 @@ void PharmacyManager::displayWriteOffInfo() const
     }
 }
 
+bool PharmacyManager::updateProduct(std::shared_ptr<MedicalProduct> updatedProduct)
+{
+    std::string id = updatedProduct->getId();
+
+    // Находим продукт по ID в productsCatalog
+    auto it = productsCatalog.find(id);
+    if (it != productsCatalog.end()) {
+        // Заменяем старый продукт на обновленный
+        it->second = updatedProduct;
+        return true;
+    }
+
+    return false;
+}

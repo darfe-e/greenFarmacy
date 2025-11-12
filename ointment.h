@@ -14,7 +14,7 @@ public:
              SafeDate expDate, std::string country,
              bool prescription, std::string activeSubst, std::string instr,
              double weight, std::string base);
-    Ointment();
+    //Ointment();
     Ointment(const Ointment& other);
     ~Ointment() override = default;
 

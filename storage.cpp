@@ -1,73 +1,74 @@
 #include "storage.h"
+#include "Exception/InventoryExceptions/InventoryException.h"
+#include "Exception/InventoryExceptions/NegativeQuantityException.h"
+#include "Exception/InventoryExceptions/InsufficientQuantityException.h"
 #include <algorithm>
 #include <stdexcept>
 
 void Storage::addProduct(std::shared_ptr<MedicalProduct> product, int quantity)
 {
     if (!product)
-        throw std::invalid_argument("Product cannot be null");
+        throw InventoryException("Product cannot be null");
     if (quantity <= 0)
-        throw std::invalid_argument("Quantity must be positive: " + std::to_string(quantity));
+        throw NegativeQuantityException(quantity);
 
     std::string productId = product->getId();
 
     if (items.find(productId) != items.end())
-        items[productId].second += quantity;                            // Увеличиваем количество существующего продукта
+        items[productId].second += quantity;
     else
-        items[productId] = std::make_pair(product, quantity);           // Добавляем новый продукт
+        items[productId] = std::make_pair(product, quantity);
 }
 
 void Storage::removeProduct(const std::string& productId, int quantity)
 {
     if (productId.empty())
-        throw std::invalid_argument("Product ID cannot be empty");
+        throw InventoryException("Product ID cannot be empty");
     if (quantity <= 0)
-        throw std::invalid_argument("Quantity must be positive: " + std::to_string(quantity));
+        throw NegativeQuantityException(quantity);
 
     auto it = items.find(productId);
     if (it == items.end())
-        throw std::runtime_error("Product not found: " + productId);
+        throw InventoryException("Product not found: " + productId);
 
     int& currentQuantity = it->second.second;
 
     if (quantity > currentQuantity)
-        throw std::runtime_error("Not enough quantity. Available: " +
-                                 std::to_string(currentQuantity) +
-                                 ", requested: " + std::to_string(quantity));
+        throw InsufficientQuantityException(productId, currentQuantity, quantity);
 
-    currentQuantity -= quantity;                                        // Уменьшаем количество
+    currentQuantity -= quantity;
 
     if (currentQuantity == 0)
-        items.erase(it);                                                // Удаляем продукт если количество 0
+        items.erase(it);
 }
 
 int Storage::getQuantity(const std::string& productId) const
 {
     if (productId.empty())
-        throw std::invalid_argument("Product ID cannot be empty");
+        throw InventoryException("Product ID cannot be empty");
 
     auto it = items.find(productId);
     if (it != items.end())
-        return it->second.second;                                       // Возвращаем количество
+        return it->second.second;
 
-    return 0;                                                           // Продукт не найден
+    return 0;
 }
 
 bool Storage::contains(const std::string& productId) const
 {
     if (productId.empty())
-        throw std::invalid_argument("Product ID cannot be empty");
+        throw InventoryException("Product ID cannot be empty");
 
-    return items.find(productId) != items.end();                        // Проверка наличия
+    return items.find(productId) != items.end();
 }
 
 std::vector<std::string> Storage::getAllProductIds() const
 {
     std::vector<std::string> ids;
-    ids.reserve(items.size());                                          // Резервируем память
+    ids.reserve(items.size());
 
     for (const auto& item : items)
-        ids.push_back(item.first);                                      // Добавляем ID продукта
+        ids.push_back(item.first);
 
     return ids;
 }

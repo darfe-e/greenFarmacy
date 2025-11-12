@@ -1,5 +1,6 @@
 #include "syrup.h"
-#include <sstream>
+#include "Exception/safeinput.h"
+#include "Exception/PharmacyExceptions/InvalidProductDataException.h"
 #include <stdexcept>
 
 Syrup::Syrup(std::string id, std::string name, double basePrice,
@@ -10,22 +11,20 @@ Syrup::Syrup(std::string id, std::string name, double basePrice,
                prescription, std::move(activeSubst), std::move(instr))
     , volumeMl(volume)
     , hasSugar(sugar)
-    , flavor(std::move(flavor))
+    , flavor(flavor)
 {
     if (volumeMl <= 0)
-        throw std::invalid_argument("Volume must be positive: " + std::to_string(volumeMl));
+    {
+        throw InvalidProductDataException("Volume", "must be positive");
+    }
     if (volumeMl > 1000)
-        throw std::invalid_argument("Volume too large: " + std::to_string(volumeMl));
+    {
+        throw InvalidProductDataException("Volume", "too large");
+    }
     if (flavor.empty())
-        throw std::invalid_argument("Flavor cannot be empty");
-}
-
-Syrup::Syrup()
-    : Medicine()
-    , volumeMl(0.0)
-    , hasSugar(false)
-    , flavor("")
-{
+    {
+        throw InvalidProductDataException("Flavor", "cannot be empty");
+    }
 }
 
 Syrup::Syrup(const Syrup& other)
@@ -38,21 +37,20 @@ Syrup::Syrup(const Syrup& other)
 
 std::string Syrup::getAdministrationMethod() const
 {
-    return "Oral";                                 // Пероральный прием
+    return "Oral";
 }
 
 std::string Syrup::getDosageForm() const
 {
-    return "Syrup";                                // Лекарственная форма - сироп
+    return "Syrup";
 }
 
 Syrup& Syrup::operator=(const Syrup& other)
 {
     if (this != &other)
     {
-        Medicine::operator=(other);                // Присваиваем базовую часть
-
-        volumeMl = other.volumeMl;                 // Присваиваем собственные поля
+        Medicine::operator=(other);
+        volumeMl = other.volumeMl;
         hasSugar = other.hasSugar;
         flavor = other.flavor;
     }
@@ -61,9 +59,9 @@ Syrup& Syrup::operator=(const Syrup& other)
 
 std::ostream& operator<<(std::ostream& os, const Syrup& syrup)
 {
-    os << static_cast<const Medicine&>(syrup);     // Выводим базовую информацию
+    os << static_cast<const Medicine&>(syrup);
 
-    os << "Volume: " << syrup.volumeMl << " ml\n"  // Выводим специфичную информацию
+    os << "Volume: " << syrup.volumeMl << " ml\n"
        << "Contains Sugar: " << (syrup.hasSugar ? "Yes" : "No") << "\n"
        << "Flavor: " << syrup.flavor << "\n"
        << "Dosage Form: " << syrup.getDosageForm() << "\n"
@@ -76,36 +74,51 @@ std::istream& operator>>(std::istream& is, Syrup& syrup)
 {
     try
     {
-        is >> static_cast<Medicine&>(syrup);       // Читаем базовую информацию
+        is >> static_cast<Medicine&>(syrup);
 
-        std::string temp;
+        // Volume
+        SafeInput::skipLabel(is); // "Volume: "
+        std::string volumeStr = SafeInput::readNonEmptyString(is, "Volume");
 
-        std::getline(is, temp);                    // "Volume: "
-        std::getline(is, temp);                    // значение + " ml"
-        size_t pos = temp.find(" ml");
+        // Удаляем " ml" из строки
+        size_t pos = volumeStr.find(" ml");
         if (pos != std::string::npos)
         {
-            temp = temp.substr(0, pos);            // Удаляем " ml" из строки
+            volumeStr = volumeStr.substr(0, pos);
         }
-        syrup.volumeMl = std::stod(temp);
 
-        std::getline(is, temp);                    // "Contains Sugar: "
-        std::getline(is, temp);
-        syrup.hasSugar = (temp == "Yes");          // Преобразуем в bool
+        syrup.volumeMl = std::stod(volumeStr);
+        if (syrup.volumeMl <= 0)
+        {
+            throw InvalidProductDataException("Volume", "must be positive");
+        }
 
-        std::getline(is, temp);                    // "Flavor: "
-        std::getline(is, syrup.flavor);            // Читаем вкус
+        // Contains Sugar
+        SafeInput::skipLabel(is); // "Contains Sugar: "
+        syrup.hasSugar = SafeInput::readBoolean(is, "Contains sugar");
 
-        std::getline(is, temp);                    // "Dosage Form: "
-        std::getline(is, temp);                    // значение (пропускаем)
-        std::getline(is, temp);                    // "Administration: "
-        std::getline(is, temp);                    // значение (пропускаем)
+        // Flavor
+        SafeInput::skipLabel(is); // "Flavor: "
+        syrup.flavor = SafeInput::readNonEmptyString(is, "Flavor");
 
+        // Пропускаем остальные поля
+        SafeInput::skipLabel(is); // "Dosage Form: "
+        SafeInput::skipLabel(is); // значение
+        SafeInput::skipLabel(is); // "Administration: "
+        SafeInput::skipLabel(is); // значение
+
+    }
+    catch (const std::invalid_argument&)
+    {
+        throw InvalidProductDataException("volume", "must be a valid number");
+    }
+    catch (const PharmacyException&)
+    {
+        throw;
     }
     catch (const std::exception& e)
     {
-        is.setstate(std::ios::failbit);
-        throw std::runtime_error("Error reading Syrup data: " + std::string(e.what()));
+        throw InvalidProductDataException("syrup data", e.what());
     }
 
     return is;

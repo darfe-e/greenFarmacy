@@ -1,4 +1,5 @@
 #include "safedate.h"
+#include <sstream>
 
 SafeDate::SafeDate(int year, int month, int day)
 {
@@ -68,4 +69,22 @@ std::string SafeDate::toString() const
     char buffer[20];
     std::strftime(buffer, sizeof(buffer), "%Y-%m-%d", &date);
     return std::string(buffer);
+}
+
+SafeDate SafeDate::fromString(const std::string& dateStr)
+{
+    // Пример реализации для формата "YYYY-MM-DD"
+    int year, month, day;
+    char dash1, dash2;
+
+    std::istringstream iss(dateStr);
+    if (iss >> year >> dash1 >> month >> dash2 >> day)
+    {
+        if (dash1 == '-' && dash2 == '-')
+        {
+            return SafeDate(year, month, day);
+        }
+    }
+
+    throw std::invalid_argument("Invalid date format: " + dateStr + ". Expected: YYYY-MM-DD");
 }

@@ -1,4 +1,6 @@
 #include "return.h"
+#include "Exception/InventoryExceptions/InventoryException.h"
+#include "Exception/safeinput.h"
 #include <sstream>
 #include <stdexcept>
 
@@ -9,7 +11,7 @@ Return::Return(std::string id, SafeDate date,
     , reason(std::move(reason))
 {
     if (this->reason.empty())
-        throw std::invalid_argument("Return reason cannot be empty");
+        throw InventoryException("Return reason cannot be empty");
 }
 
 Return::Return()
@@ -31,21 +33,13 @@ std::string Return::getOperationType() const
 
 void Return::process()
 {
-    // Используем методы, которые должны быть в базовом классе InventoryOperation
-    // Если этих методов нет, нужно либо добавить их в базовый класс,
-    // либо использовать альтернативный подход
-
-    // Вариант 1: Если в базовом классе есть методы getStatus()/setStatus()
     if (getStatus() == "completed")
-        throw std::runtime_error("Return operation already completed");
+        throw InventoryException("Return operation already completed");
 
     if (getStatus() == "cancelled")
-        throw std::runtime_error("Return operation is cancelled");
+        throw InventoryException("Return operation is cancelled");
 
-    // Логика обработки возврата
-    // В реальной системе здесь была бы бизнес-логика
-
-    setStatus("completed"); // Помечаем как завершенную
+    setStatus("completed");
 }
 
 Return& Return::operator=(const Return& other)
@@ -71,23 +65,17 @@ std::istream& operator>>(std::istream& is, Return& returnOp)
     {
         is >> static_cast<InventoryOperation&>(returnOp);
 
-        std::string temp;
-        std::getline(is, temp); // Пропускаем "Reason: " если он есть в потоке
+        SafeInput::skipLabel(is); // "Reason: "
+        returnOp.reason = SafeInput::readNonEmptyString(is, "Return reason");
 
-        // Читаем до конца строки или следующий токен
-        if (temp.find("Reason:") != std::string::npos) {
-            // Если в temp уже есть "Reason: ", то причина - остаток строки
-            returnOp.reason = temp.substr(temp.find("Reason:") + 7);
-        } else {
-            // Иначе читаем следующую строку как причину
-            std::getline(is, returnOp.reason);
-        }
-
+    }
+    catch (const InventoryException&)
+    {
+        throw;
     }
     catch (const std::exception& e)
     {
-        is.setstate(std::ios::failbit);
-        throw std::runtime_error("Error reading Return data: " + std::string(e.what()));
+        throw InventoryException("Error reading return data: " + std::string(e.what()));
     }
 
     return is;

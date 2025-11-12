@@ -25,6 +25,7 @@ public:
     int getYear() const { return date.tm_year + 1900; }
     int getMonth() const { return date.tm_mon + 1; }
     int getDay() const { return date.tm_mday; }
+    static SafeDate fromString(const std::string& dateStr);
 };
 
 #endif // SAFEDATE_H

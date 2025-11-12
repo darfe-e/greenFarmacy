@@ -1,4 +1,7 @@
 #include "inventoryoperation.h"
+#include "Exception/InventoryExceptions/InventoryException.h"
+#include "Exception/InventoryExceptions/NegativeQuantityException.h"
+#include "Exception/safeinput.h"
 #include <sstream>
 #include <stdexcept>
 
@@ -12,13 +15,13 @@ InventoryOperation::InventoryOperation(std::string id, SafeDate date,
     , status(std::move(status))
 {
     if (this->id.empty())
-        throw std::invalid_argument("Operation ID cannot be empty");
+        throw InventoryException("Operation ID cannot be empty");
     if (!this->product)
-        throw std::invalid_argument("Product cannot be null");
+        throw InventoryException("Product cannot be null");
     if (this->quantity <= 0)
-        throw std::invalid_argument("Quantity must be positive: " + std::to_string(this->quantity));
+        throw NegativeQuantityException(this->quantity);
     if (this->status.empty())
-        throw std::invalid_argument("Status cannot be empty");
+        throw InventoryException("Status cannot be empty");
 }
 
 InventoryOperation::InventoryOperation()
@@ -68,59 +71,37 @@ std::istream& operator>>(std::istream& is, InventoryOperation& operation)
 {
     try
     {
-        std::string temp;
+        SafeInput::skipLabel(is); // "Operation ID: "
+        operation.id = SafeInput::readNonEmptyString(is, "Operation ID");
 
-        // Чтение ID операции
-        std::getline(is, temp);                    // "Operation ID: "
-        std::getline(is, operation.id);
+        SafeInput::skipLabel(is); // "Date: "
+        std::string dateStr = SafeInput::readNonEmptyString(is, "Date");
+        operation.operationDate = SafeDate::fromString(dateStr);
 
-        // Чтение и парсинг даты
-        std::getline(is, temp);                    // "Date: "
-        std::getline(is, temp);
+        SafeInput::skipLabel(is); // "Product: "
+        std::string productInfo = SafeInput::readNonEmptyString(is, "Product");
 
-        // Парсинг даты из формата "YYYY-MM-DD"
-        std::stringstream dateSS(temp);
-        std::string yearStr, monthStr, dayStr;
-
-        std::getline(dateSS, yearStr, '-');
-        std::getline(dateSS, monthStr, '-');
-        std::getline(dateSS, dayStr, '-');
-
-        int year = std::stoi(yearStr);
-        int month = std::stoi(monthStr);
-        int day = std::stoi(dayStr);
-
-        operation.operationDate = SafeDate(year, month, day);
-
-        // Чтение информации о продукте
-        std::getline(is, temp);                    // "Product: "
-        std::getline(is, temp);
-
-        std::string productId = temp; // предполагаем, что это ID продукта
-        std::string productName = "Temp Product"; // временное имя
-
-        // Создаем временный продукт (в реальной системе нужно искать в каталоге)
+        // Временный продукт (в реальной системе нужно искать в каталоге)
         operation.product = std::make_shared<MedicalProduct>(
-            productId, productName, 0.0, SafeDate(2025, 12, 31), "Unknown");
+            "temp_id", "Temp Product", 0.0, SafeDate(2025, 12, 31), "Unknown");
 
-        // Чтение количества
-        std::getline(is, temp);                    // "Quantity: "
-        std::getline(is, temp);
-        operation.quantity = std::stoi(temp);
+        SafeInput::skipLabel(is); // "Quantity: "
+        operation.quantity = SafeInput::readPositiveInt(is, "Quantity");
 
-        // Чтение статуса
-        std::getline(is, temp);                    // "Status: "
-        std::getline(is, operation.status);
+        SafeInput::skipLabel(is); // "Status: "
+        operation.status = SafeInput::readNonEmptyString(is, "Status");
 
-        // Пропускаем тип операции (он будет обработан в производных классах)
-        std::getline(is, temp);                    // "Type: "
-        std::getline(is, temp);
+        SafeInput::skipLabel(is); // "Type: "
+        std::string type = SafeInput::readNonEmptyString(is, "Operation type");
 
+    }
+    catch (const InventoryException&)
+    {
+        throw;
     }
     catch (const std::exception& e)
     {
-        is.setstate(std::ios::failbit);
-        throw std::runtime_error("Error reading InventoryOperation data: " + std::string(e.what()));
+        throw InventoryException("Error reading inventory operation: " + std::string(e.what()));
     }
 
     return is;

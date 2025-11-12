@@ -2,6 +2,10 @@
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
+#include "Exception/safeinput.h"
+#include "Exception/PharmacyExceptions/InvalidProductDataException.h"
+#include "Exception/PharmacyExceptions/ProductNotFoundException.h"
+#include "Exception/PharmacyExceptions/DuplicateProductException.h"
 
 // Конструктор с name
 Pharmacy::Pharmacy(const std::string& id, const std::string& name, const std::string& addr, const std::string& phone,
@@ -26,19 +30,29 @@ Pharmacy::Pharmacy(const Pharmacy& other)
 void Pharmacy::addToStorage(std::shared_ptr<MedicalProduct> product, int quantity)
 {
     if (!product)
-        throw std::invalid_argument("Product cannot be null");
+        throw InvalidProductDataException("product", "cannot be null");
+
     if (quantity <= 0)
-        throw std::invalid_argument("Quantity must be positive");
-    storage.addProduct(product, quantity);         // Добавляем продукт на склад
+        throw InvalidProductDataException("quantity", "must be positive");
+
+    if (storage.contains(product->getId()))
+        throw DuplicateProductException(product->getId());
+
+    storage.addProduct(product, quantity);
 }
 
 void Pharmacy::removeFromStorage(const std::string& productId, int quantity)
 {
     if (productId.empty())
-        throw std::invalid_argument("Product ID cannot be empty");
+        throw InvalidProductDataException("product ID", "cannot be empty");
+
     if (quantity <= 0)
-        throw std::invalid_argument("Quantity must be positive");
-    storage.removeProduct(productId, quantity);    // Удаляем продукт со склада
+        throw InvalidProductDataException("quantity", "must be positive");
+
+    if (!storage.contains(productId))
+        throw ProductNotFoundException(productId);
+
+    storage.removeProduct(productId, quantity);
 }
 
 int Pharmacy::checkStock(const std::string& productId) const
@@ -123,29 +137,29 @@ std::istream& operator>>(std::istream& is, Pharmacy& pharmacy)
 {
     try
     {
-        std::string temp;
+        SafeInput::skipLabel(is); // "Pharmacy ID: "
+        pharmacy.id = SafeInput::readNonEmptyString(is, "Pharmacy ID");
 
-        std::getline(is, temp);                    // "Pharmacy ID: "
-        std::getline(is, pharmacy.id);             // Читаем ID аптеки
+        SafeInput::skipLabel(is); // "Address: "
+        pharmacy.address = SafeInput::readNonEmptyString(is, "Address");
 
-        std::getline(is, temp);                    // "Address: "
-        std::getline(is, pharmacy.address);        // Читаем адрес
+        SafeInput::skipLabel(is); // "Phone: "
+        pharmacy.phoneNumber = SafeInput::readNonEmptyString(is, "Phone number");
 
-        std::getline(is, temp);                    // "Phone: "
-        std::getline(is, pharmacy.phoneNumber);    // Читаем телефон
+        SafeInput::skipLabel(is); // "Rent Cost: "
+        pharmacy.rentCost = SafeInput::readPositiveDouble(is, "Rent cost");
 
-        std::getline(is, temp);                    // "Rent Cost: "
-        std::getline(is, temp);
-        pharmacy.rentCost = std::stod(temp);       // Читаем стоимость аренды
+        // Пропускаем информацию о продуктах
+        SafeInput::skipLabel(is); // "Products in storage: X"
 
-        std::getline(is, temp);                    // "Products in storage: X"
-        // Пропускаем информацию о продуктах (они загружаются отдельно)
-
+    }
+    catch (const PharmacyException&)
+    {
+        throw;
     }
     catch (const std::exception& e)
     {
-        is.setstate(std::ios::failbit);
-        throw std::runtime_error("Error reading Pharmacy data: " + std::string(e.what()));
+        throw InvalidProductDataException("pharmacy data", e.what());
     }
 
     return is;

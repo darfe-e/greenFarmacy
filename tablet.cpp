@@ -1,6 +1,8 @@
 #include "tablet.h"
-#include <sstream>
+#include "Exception/safeinput.h"
+#include "Exception/PharmacyExceptions/InvalidProductDataException.h"
 #include <stdexcept>
+#include <QDebug>
 
 Tablet::Tablet(std::string id, std::string name, double basePrice,
                SafeDate expDate, std::string country,
@@ -10,28 +12,24 @@ Tablet::Tablet(std::string id, std::string name, double basePrice,
                prescription, std::move(activeSubst), std::move(instr))
     , unitsPerPackage(units)
     , dosageMg(dosage)
-    , coating(std::move(coating))
+    , coating(coating)
 {
+    qDebug() << "Создание Tablet:" << QString::fromStdString(id)
+             << "coating:" << QString::fromStdString(coating);
+
     if (unitsPerPackage <= 0)
     {
-        throw std::invalid_argument("Units per package must be positive: " + std::to_string(unitsPerPackage));
+        throw InvalidProductDataException("Units per package", "must be positive");
     }
     if (dosageMg <= 0)
     {
-        throw std::invalid_argument("Dosage must be positive: " + std::to_string(dosageMg));
+        throw InvalidProductDataException("Dosage", "must be positive");
     }
     if (coating.empty())
     {
-        throw std::invalid_argument("Coating cannot be empty");
+        qDebug() << "ОШИБКА: coating пустой! ID:" << QString::fromStdString(id);
+        throw InvalidProductDataException("Coating", "cannot be empty");
     }
-}
-
-Tablet::Tablet()
-    : Medicine()
-    , unitsPerPackage(0)
-    , dosageMg(0.0)
-    , coating("")
-{
 }
 
 Tablet::Tablet(const Tablet& other)
@@ -44,21 +42,20 @@ Tablet::Tablet(const Tablet& other)
 
 std::string Tablet::getAdministrationMethod() const
 {
-    return "Oral";                                 // Пероральный прием
+    return "Oral";
 }
 
 std::string Tablet::getDosageForm() const
 {
-    return "Tablet";                               // Лекарственная форма - таблетка
+    return "Tablet";
 }
 
 Tablet& Tablet::operator=(const Tablet& other)
 {
     if (this != &other)
     {
-        Medicine::operator=(other);                // Присваиваем базовую часть
-
-        unitsPerPackage = other.unitsPerPackage;   // Присваиваем собственные поля
+        Medicine::operator=(other);
+        unitsPerPackage = other.unitsPerPackage;
         dosageMg = other.dosageMg;
         coating = other.coating;
     }
@@ -67,7 +64,7 @@ Tablet& Tablet::operator=(const Tablet& other)
 
 std::ostream& operator<<(std::ostream& os, const Tablet& tablet)
 {
-    os << static_cast<const Medicine&>(tablet);    // Выводим базовую информацию
+    os << static_cast<const Medicine&>(tablet);
 
     os << "Units per package: " << tablet.unitsPerPackage << "\n"
        << "Dosage: " << tablet.dosageMg << " mg\n"
@@ -82,36 +79,51 @@ std::istream& operator>>(std::istream& is, Tablet& tablet)
 {
     try
     {
-        is >> static_cast<Medicine&>(tablet);      // Читаем базовую информацию
+        is >> static_cast<Medicine&>(tablet);
 
-        std::string temp;
+        // Units per package
+        SafeInput::skipLabel(is); // "Units per package: "
+        tablet.unitsPerPackage = SafeInput::readPositiveInt(is, "Units per package");
 
-        std::getline(is, temp);                    // "Units per package: "
-        std::getline(is, temp);
-        tablet.unitsPerPackage = std::stoi(temp);  // Читаем количество таблеток
+        // Dosage
+        SafeInput::skipLabel(is); // "Dosage: "
+        std::string dosageStr = SafeInput::readNonEmptyString(is, "Dosage");
 
-        std::getline(is, temp);                    // "Dosage: "
-        std::getline(is, temp);                    // значение + " mg"
-        size_t pos = temp.find(" mg");
+        // Удаляем " mg" из строки
+        size_t pos = dosageStr.find(" mg");
         if (pos != std::string::npos)
         {
-            temp = temp.substr(0, pos);            // Удаляем " mg" из строки
+            dosageStr = dosageStr.substr(0, pos);
         }
-        tablet.dosageMg = std::stod(temp);         // Читаем дозировку
 
-        std::getline(is, temp);                    // "Coating: "
-        std::getline(is, tablet.coating);          // Читаем тип оболочки
+        tablet.dosageMg = std::stod(dosageStr);
+        if (tablet.dosageMg <= 0)
+        {
+            throw InvalidProductDataException("Dosage", "must be positive");
+        }
 
-        std::getline(is, temp);                    // "Dosage Form: "
-        std::getline(is, temp);                    // значение (пропускаем)
-        std::getline(is, temp);                    // "Administration: "
-        std::getline(is, temp);                    // значение (пропускаем)
+        // Coating
+        SafeInput::skipLabel(is); // "Coating: "
+        tablet.coating = SafeInput::readNonEmptyString(is, "Coating");
 
+        // Пропускаем остальные поля
+        SafeInput::skipLabel(is); // "Dosage Form: "
+        SafeInput::skipLabel(is); // значение
+        SafeInput::skipLabel(is); // "Administration: "
+        SafeInput::skipLabel(is); // значение
+
+    }
+    catch (const std::invalid_argument&)
+    {
+        throw InvalidProductDataException("dosage", "must be a valid number");
+    }
+    catch (const PharmacyException&)
+    {
+        throw;
     }
     catch (const std::exception& e)
     {
-        is.setstate(std::ios::failbit);
-        throw std::runtime_error("Error reading Tablet data: " + std::string(e.what()));
+        throw InvalidProductDataException("tablet data", e.what());
     }
 
     return is;

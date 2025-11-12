@@ -2,14 +2,19 @@
 #define PHARMACYMANAGER_H
 
 #include "pharmacy.h"
+#include "medicalproduct.h"
 #include "medicine.h"
 #include "inventoryoperation.h"
-#include <map>
-#include <vector>
-#include <memory>
 #include "supply.h"
 #include "return.h"
 #include "writeoff.h"
+#include "Exception/PharmacyExceptions/InvalidProductDataException.h"
+#include "Exception/PharmacyExceptions/ProductNotFoundException.h"
+#include "Exception/PharmacyExceptions/DuplicateProductException.h"
+#include <memory>
+#include <map>
+#include <vector>
+#include <string>
 
 class PharmacyManager
 {
@@ -20,8 +25,6 @@ private:
 
 public:
     PharmacyManager();
-    PharmacyManager(const PharmacyManager& other) = delete;
-    ~PharmacyManager() = default;
 
     // Управление продуктами
     void addProduct(std::shared_ptr<MedicalProduct> product);
@@ -35,41 +38,26 @@ public:
 
     // Управление операциями
     void addOperation(std::shared_ptr<InventoryOperation> operation);
-
-    // Геттеры для доступа к данным
-    const std::vector<std::shared_ptr<InventoryOperation>>& getOperations() const { return operations; }
-    const std::map<std::string, std::shared_ptr<MedicalProduct>>& getProductsCatalog() const { return productsCatalog; }
-    const std::map<std::string, std::shared_ptr<Pharmacy>>& getPharmacies() const { return pharmacies; }
-
-    // Поиск операций по типу
     std::vector<std::shared_ptr<Supply>> getSupplyOperations() const;
     std::vector<std::shared_ptr<Return>> getReturnOperations() const;
     std::vector<std::shared_ptr<WriteOff>> getWriteOffOperations() const;
 
-    // Получение всех продуктов
-    std::vector<std::shared_ptr<MedicalProduct>> getAllProducts() const;
-
-    // Поиск по различным критериям
+    // Поиск и аналитика
     std::vector<std::shared_ptr<MedicalProduct>> searchProductsByCountry(const std::string& country) const;
     std::vector<std::shared_ptr<MedicalProduct>> searchProductsBySubstance(const std::string& substance) const;
     std::vector<std::shared_ptr<MedicalProduct>> searchProducts(const std::string& searchTerm) const;
-
-    // Получение информации о наличии в аптеках
+    std::vector<std::shared_ptr<MedicalProduct>> searchProductsByName(const std::string& name) const;
     std::map<std::string, int> getProductAvailability(const std::string& productId) const;
-
-    // Основной функционал
     std::vector<std::pair<std::string, std::string>> findProductInPharmacies(const std::string& productNameOrId) const;
     std::vector<std::shared_ptr<Medicine>> getAnalogues(const std::string& productId) const;
+    std::vector<std::shared_ptr<MedicalProduct>> getAllProducts() const;
 
-    // Поиск
-    std::vector<std::shared_ptr<MedicalProduct>> searchProductsByName(const std::string& name) const;
+    bool updateProduct(std::shared_ptr<MedicalProduct> updatedProduct);
 
-    // Информация об операциях
+    // Отображение информации
     void displaySupplyInfo() const;
     void displayReturnInfo() const;
     void displayWriteOffInfo() const;
-
-    // Операторы
-    PharmacyManager& operator=(const PharmacyManager& other) = delete;
 };
-#endif
+
+#endif // PHARMACYMANAGER_H

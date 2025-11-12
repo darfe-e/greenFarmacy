@@ -5,6 +5,11 @@
 #include <QStack>
 #include <QCompleter>
 #include "addproductdialog.h"
+#include "medicalproduct.h"
+#include "pharmacymanager.h"
+#include "tablet.h"
+#include "ointment.h"
+#include "syrup.h"
 
 QT_BEGIN_NAMESPACE
 class QListWidget;
@@ -56,6 +61,9 @@ private:
     void performSearch(const QString &searchText);
     void fillDialogWithProductData(AddProductDialog *dialog, const QString& productId, const QString& productName);
     void saveProductChanges(const QString& productId);
+    void setupConnections();
+    void loadSampleData();
+    QString formatProductDetails(std::shared_ptr<MedicalProduct> product);
 
     // UI Components
     QLineEdit *searchEdit;
@@ -88,6 +96,18 @@ private:
     QStack<QString> undoStack;
     QString currentFilter;
     bool isEditMode;
+
+
+    QLineEdit *searchLineEdit;
+    QPushButton *addButton;
+    QPushButton *editButton;
+    QPushButton *deleteButton;
+    QPushButton *saveButton;
+    QPushButton *cancelButton;
+
+    // Менеджер данных
+    PharmacyManager pharmacyManager;
+    std::shared_ptr<MedicalProduct> currentEditingProduct;
 };
 
 #endif // MAINWINDOW_H

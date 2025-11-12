@@ -16,7 +16,7 @@ public:
            SafeDate expDate, std::string country,
            bool prescription, std::string activeSubst, std::string instr,
            int units, double dosage, std::string coating);
-    Tablet();
+    //Tablet();
     Tablet(const Tablet& other);
     ~Tablet() override = default;
 

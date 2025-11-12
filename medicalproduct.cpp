@@ -1,7 +1,10 @@
 #include "medicalproduct.h"
 #include "Exception/PharmacyExceptions/InvalidProductDataException.h"
 #include "Exception/PharmacyExceptions/ExpiredProductException.h"
+#include "Exception/PharmacyExceptions/InvalidPriceException.h"
+#include "Exception/PharmacyExceptions/InvalidProductIdException.h"
 #include "safedate.h"
+#include "Exception/safeinput.h"
 
 MedicalProduct::MedicalProduct()
     : id(""), name(""), basePrice(0.0), expirationDate(SafeDate(2025, 12, 31)), manufacturerCountry("")
@@ -32,10 +35,11 @@ MedicalProduct::MedicalProduct(std::string id, std::string name, double basePric
     }
 }
 
-MedicalProduct::MedicalProduct(const MedicalProduct& other): id(other.id),  name(other.name),
-                        basePrice(other.basePrice), expirationDate(other.expirationDate),
-                        manufacturerCountry(other.manufacturerCountry){}
-
+MedicalProduct::MedicalProduct(const MedicalProduct& other)
+    : id(other.id), name(other.name), basePrice(other.basePrice),
+    expirationDate(other.expirationDate), manufacturerCountry(other.manufacturerCountry)
+{
+}
 
 std::ostream& operator<<(std::ostream& os, const MedicalProduct& prod)
 {
@@ -51,40 +55,57 @@ std::ostream& operator<<(std::ostream& os, const MedicalProduct& prod)
     return os;
 }
 
-// Оператор ввода
 std::istream& operator>>(std::istream& is, MedicalProduct& prod)
 {
-    std::string temp;
+    try
+    {
+        SafeInput::skipLabel(is); // "ID: "
+        prod.id = SafeInput::readProductId(is);
 
-    // Пропускаем метки
-    std::getline(is, temp); // "ID: "
-    std::getline(is, prod.id);
+        SafeInput::skipLabel(is); // "Name: "
+        prod.name = SafeInput::readNonEmptyString(is, "Product name");
 
-    std::getline(is, temp); // "Name: "
-    std::getline(is, prod.name);
+        SafeInput::skipLabel(is); // "Price: "
+        prod.basePrice = SafeInput::readPositiveDouble(is, "Price");
 
-    std::getline(is, temp); // "Price: "
-    is >> prod.basePrice;
-    is.ignore(); // Пропускаем символ новой строки
+        SafeInput::skipLabel(is); // "Expiration Date: "
+        std::string dateStr = SafeInput::readNonEmptyString(is, "Expiration date");
+        prod.expirationDate = SafeDate::fromString(dateStr);
 
-    std::getline(is, temp); // "Expiration Date: "
-    std::string dateStr;
-    std::getline(is, dateStr);
+        SafeInput::skipLabel(is); // "Manufacturer Country: "
+        prod.manufacturerCountry = SafeInput::readNonEmptyString(is, "Manufacturer country");
 
-    std::getline(is, temp); // "Manufacturer Country: "
-    std::getline(is, prod.manufacturerCountry);
+        // Проверка срока годности
+        if (prod.expirationDate.isExpired())
+        {
+            throw ExpiredProductException(prod.id, prod.expirationDate);
+        }
+    }
+    catch (const ExpiredProductException&)
+    {
+        throw; // Перебрасываем как есть
+    }
+    catch (const PharmacyException&)
+    {
+        throw; // Перебрасываем кастомные исключения
+    }
+    catch (const std::exception& e)
+    {
+        throw InvalidProductDataException("input data", e.what());
+    }
 
     return is;
 }
 
 MedicalProduct& MedicalProduct::operator=(const MedicalProduct& other)
 {
-    if (this != &other) {  // Проверка самоприсваивания
+    if (this != &other)
+    {
         id = other.id;
         name = other.name;
         basePrice = other.basePrice;
         expirationDate = other.expirationDate;
         manufacturerCountry = other.manufacturerCountry;
     }
-    return *this;  // Возврат ссылки на текущий объект
+    return *this;
 }
