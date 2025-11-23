@@ -1,0 +1,22 @@
+<map id="Exception/safeinput.h" name="Exception/safeinput.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="108,5,271,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="26,401,106,427"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="120,33,74,51,53,64,34,80,17,105,10,128,10,185,10,269,14,302,24,335,52,388,47,391,19,337,9,303,4,269,4,185,5,127,12,103,30,77,49,60,71,46,118,28"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="44,86,103,111"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="174,33,104,80,101,76,171,29"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="127,86,186,111"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="187,32,169,75,164,72,182,30"/>
+<area shape="rect" id="Node000005" href="$InvalidProductDataException_8h.html" title=" " alt="" coords="184,167,411,207"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="198,30,251,117,277,154,273,157,246,120,194,33"/>
+<area shape="rect" id="Node000008" href="$InvalidPriceException_8h.html" title=" " alt="" coords="260,79,487,119"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="218,28,318,71,316,76,215,33"/>
+<area shape="rect" id="Node000009" href="$InvalidProductIdException_8h.html" title=" " alt="" coords="511,79,738,119"/>
+<area shape="poly" id="edge10_Node000001_Node000009" title=" " alt="" coords="253,28,507,74,506,79,252,33"/>
+<area shape="rect" id="Node000006" href="$MedicalProductException_8h.html" title=" " alt="" coords="84,255,282,280"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="271,209,213,249,210,245,268,205"/>
+<area shape="rect" id="Node000007" href="$PharmacyException_8h.html" title=" " alt="" coords="52,328,215,353"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="177,282,152,318,147,315,173,279"/>
+<area shape="poly" id="edge7_Node000007_Node000002" title=" " alt="" coords="124,356,88,393,84,389,121,352"/>
+<area shape="poly" id="edge9_Node000008_Node000005" title=" " alt="" coords="359,121,326,158,322,154,355,117"/>
+<area shape="poly" id="edge11_Node000009_Node000005" title=" " alt="" coords="553,121,383,166,382,161,552,116"/>
+</map>

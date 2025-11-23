@@ -1,0 +1,24 @@
+<map id="Exception/InventoryExceptions/InventoryException.h" name="Exception/InventoryExceptions/InventoryException.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="405,5,627,45"/>
+<area shape="rect" id="Node000002" href="$InsufficientQuantityException_8h.html" title=" " alt="" coords="26,93,257,133"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="421,51,224,96,223,91,420,46"/>
+<area shape="rect" id="Node000003" href="$storage_8cpp.html" title=" " alt="" coords="92,181,191,207"/>
+<area shape="poly" id="edge11_Node000001_Node000003" title=" " alt="" coords="391,37,159,60,64,76,32,86,15,95,10,104,8,112,16,132,31,149,50,163,93,181,91,186,47,168,27,153,11,135,3,113,5,102,12,91,30,81,62,71,158,55,391,32"/>
+<area shape="rect" id="Node000004" href="$NegativeQuantityException_8h.html" title=" " alt="" coords="331,93,554,133"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="493,58,461,95,457,91,489,54"/>
+<area shape="rect" id="Node000005" href="$inventoryoperation_8cpp.html" title=" " alt="" coords="247,181,420,207"/>
+<area shape="poly" id="edge9_Node000001_Node000005" title=" " alt="" coords="393,46,352,65,335,79,321,95,313,116,314,139,329,180,324,182,309,140,308,115,316,92,332,75,350,61,390,41"/>
+<area shape="rect" id="Node000006" href="$supply_8cpp.html" title=" " alt="" coords="460,181,551,207"/>
+<area shape="poly" id="edge12_Node000001_Node000006" title=" " alt="" coords="546,55,559,72,568,92,573,114,568,134,549,163,525,183,522,179,545,159,563,132,567,114,563,94,554,75,542,58"/>
+<area shape="rect" id="Node000007" href="$writeoff_8cpp.html" title=" " alt="" coords="583,181,681,207"/>
+<area shape="poly" id="edge13_Node000001_Node000007" title=" " alt="" coords="552,53,588,92,614,139,631,180,626,182,610,142,583,95,548,57"/>
+<area shape="rect" id="Node000008" href="$StorageOperationException_8h.html" title=" " alt="" coords="678,93,901,133"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="590,47,730,91,729,96,589,52"/>
+<area shape="rect" id="Node000009" href="$return_8cpp.html" title=" " alt="" coords="925,101,1013,126"/>
+<area shape="poly" id="edge10_Node000001_Node000009" title=" " alt="" coords="641,40,773,61,914,91,939,98,938,103,913,96,772,66,641,45"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="144,147,144,181,139,181,139,147"/>
+<area shape="poly" id="edge5_Node000004_Node000003" title=" " alt="" coords="358,139,186,184,185,179,357,134"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="407,144,351,183,348,179,404,139"/>
+<area shape="poly" id="edge6_Node000004_Node000006" title=" " alt="" coords="469,143,498,179,494,183,464,146"/>
+<area shape="poly" id="edge7_Node000004_Node000007" title=" " alt="" coords="502,136,605,179,603,184,500,141"/>
+</map>

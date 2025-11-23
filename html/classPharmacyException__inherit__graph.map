@@ -1,0 +1,43 @@
+<map id="PharmacyException" name="PharmacyException">
+<area shape="rect" id="Node000001" title=" " alt="" coords="192,327,343,352"/>
+<area shape="rect" id="Node000003" href="$classFileOperationException.html" title=" " alt="" coords="411,104,585,129"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="290,315,482,128,485,132,293,319"/>
+<area shape="rect" id="Node000008" href="$classInvalidOperationException.html" title=" " alt="" coords="401,252,595,277"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="307,318,390,286,432,275,433,280,392,291,309,323"/>
+<area shape="rect" id="Node000009" href="$classInventoryException.html" title=" " alt="" coords="424,301,572,327"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="356,327,423,319,424,325,357,332"/>
+<area shape="rect" id="Node000013" href="$classMedicalProductException.html" title=" " alt="" coords="405,351,591,376"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="357,346,405,351,404,356,356,351"/>
+<area shape="rect" id="Node000020" href="$classPharmacyOperationException.html" title=" " alt="" coords="391,400,605,425"/>
+<area shape="poly" id="edge19_Node000001_Node000020" title=" " alt="" coords="310,355,391,386,434,397,432,403,390,391,308,360"/>
+<area shape="rect" id="Node000021" href="$classSupplyChainException.html" title=" " alt="" coords="415,449,581,475"/>
+<area shape="poly" id="edge20_Node000001_Node000021" title=" " alt="" coords="292,360,336,399,363,419,392,436,421,447,420,452,390,440,360,424,333,404,289,364"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,327,144,352"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="158,337,192,337,192,342,158,342"/>
+<area shape="rect" id="Node000004" href="$classFileNotFoundException.html" title=" " alt="" coords="675,5,846,31"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="532,95,588,67,652,39,692,28,693,33,654,45,590,72,534,100"/>
+<area shape="rect" id="Node000005" href="$classFileParseException.html" title=" " alt="" coords="689,55,833,80"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="579,99,692,77,693,83,580,104"/>
+<area shape="rect" id="Node000006" href="$classFileWriteException.html" title=" " alt="" coords="689,104,833,129"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="598,114,689,114,689,119,598,119"/>
+<area shape="rect" id="Node000007" href="$classSerializationException.html" title=" " alt="" coords="677,153,844,179"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="580,129,693,151,692,156,579,135"/>
+<area shape="rect" id="Node000010" href="$classInsufficientQuantityException.html" title=" " alt="" coords="653,203,868,228"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="584,296,604,286,618,275,627,262,636,249,652,237,678,226,680,231,655,242,640,253,631,265,622,279,607,291,586,300"/>
+<area shape="rect" id="Node000011" href="$classNegativeQuantityException.html" title=" " alt="" coords="660,252,861,277"/>
+<area shape="poly" id="edge10_Node000009_Node000011" title=" " alt="" coords="579,296,692,275,693,280,580,301"/>
+<area shape="rect" id="Node000012" href="$classStorageOperationException.html" title=" " alt="" coords="661,301,861,327"/>
+<area shape="poly" id="edge11_Node000009_Node000012" title=" " alt="" coords="586,311,660,311,660,317,586,317"/>
+<area shape="rect" id="Node000014" href="$classDuplicateProductException.html" title=" " alt="" coords="662,351,859,376"/>
+<area shape="poly" id="edge13_Node000013_Node000014" title=" " alt="" coords="605,361,662,361,662,366,605,366"/>
+<area shape="rect" id="Node000015" href="$classExpiredProductException.html" title=" " alt="" coords="669,400,853,425"/>
+<area shape="poly" id="edge14_Node000013_Node000015" title=" " alt="" coords="580,376,693,397,692,403,579,381"/>
+<area shape="rect" id="Node000016" href="$classInvalidProductDataException.html" title=" " alt="" coords="655,449,866,475"/>
+<area shape="poly" id="edge15_Node000013_Node000016" title=" " alt="" coords="590,378,607,386,622,399,631,412,640,424,655,436,680,447,678,452,652,440,636,428,627,415,618,402,604,391,588,383"/>
+<area shape="rect" id="Node000019" href="$classProductNotFoundException.html" title=" " alt="" coords="662,499,859,524"/>
+<area shape="poly" id="edge18_Node000013_Node000019" title=" " alt="" coords="598,380,607,387,619,399,626,412,632,437,638,462,644,474,655,485,673,496,670,501,652,489,640,477,633,464,627,439,621,414,615,402,604,391,595,385"/>
+<area shape="rect" id="Node000017" href="$classInvalidPriceException.html" title=" " alt="" coords="930,425,1093,451"/>
+<area shape="poly" id="edge16_Node000016_Node000017" title=" " alt="" coords="879,448,930,443,930,448,880,453"/>
+<area shape="rect" id="Node000018" href="$classInvalidProductIdException.html" title=" " alt="" coords="916,475,1107,500"/>
+<area shape="poly" id="edge17_Node000016_Node000018" title=" " alt="" coords="880,471,916,475,915,480,879,477"/>
+</map>

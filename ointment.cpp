@@ -60,49 +60,55 @@ Ointment& Ointment::operator=(const Ointment& other)
 
 std::ostream& operator<<(std::ostream& os, const Ointment& ointment)
 {
-    os << static_cast<const Medicine&>(ointment); // Выводим базовую информацию
-
-    os << "Weight: " << ointment.weightG << " g\n"
-       << "Base type: " << ointment.baseType << "\n"
-       << "Dosage Form: " << ointment.getDosageForm() << "\n"
-       << "Administration: " << ointment.getAdministrationMethod() << "\n";
-
+    os << "[OINTMENT];"; // Маркер типа
+    os << static_cast<const Medicine&>(ointment) << ";"
+       << ointment.weightG << " g" << ";"
+       << ointment.baseType;
     return os;
 }
-
 
 std::istream& operator>>(std::istream& is, Ointment& ointment)
 {
     try
     {
-        is >> static_cast<Medicine&>(ointment);
+        std::string line;
+        std::getline(is, line);
 
-        // Weight
-        SafeInput::skipLabel(is); // "Weight: "
-        std::string weightStr = SafeInput::readNonEmptyString(is, "Weight");
+        std::istringstream iss(line);
+        std::vector<std::string> tokens;
+        std::string token;
 
-        // Удаляем " g" из строки
+        while (std::getline(iss, token, ';')) {
+            tokens.push_back(token);
+        }
+
+        if (tokens.size() < 14) {
+            throw InvalidProductDataException("ointment data", "invalid number of fields");
+        }
+
+        // Восстанавливаем базовую информацию Medicine
+        std::istringstream medicineStream(tokens[0] + ";" + tokens[1] + ";" + tokens[2] + ";" + tokens[3] + ";" + tokens[4] + ";" + tokens[5] + ";" + tokens[6] + ";" + tokens[7] + ";" + tokens[8] + ";" + tokens[9]);
+        medicineStream >> static_cast<Medicine&>(ointment);
+
+        // Weight (11-е поле)
+        std::string weightStr = tokens[10];
         size_t pos = weightStr.find(" g");
-        if (pos != std::string::npos)
-        {
+        if (pos != std::string::npos) {
             weightStr = weightStr.substr(0, pos);
         }
 
         ointment.weightG = std::stod(weightStr);
-        if (ointment.weightG <= 0)
-        {
+        if (ointment.weightG <= 0) {
             throw InvalidProductDataException("weight", "must be positive");
         }
 
-        // Base type
-        SafeInput::skipLabel(is); // "Base type: "
-        ointment.baseType = SafeInput::readNonEmptyString(is, "Base type");
+        // Base type (12-е поле)
+        ointment.baseType = tokens[11];
+        if (ointment.baseType.empty()) {
+            throw InvalidProductDataException("Base type", "cannot be empty");
+        }
 
-        // Пропускаем остальные поля
-        SafeInput::skipLabel(is); // "Dosage Form: "
-        SafeInput::skipLabel(is); // значение
-        SafeInput::skipLabel(is); // "Administration: "
-        SafeInput::skipLabel(is); // значение
+        // Dosage Form и Administration Method (13-е и 14-е поля) - только для вывода
 
     }
     catch (const std::invalid_argument&)

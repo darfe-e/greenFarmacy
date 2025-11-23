@@ -19,7 +19,6 @@ public:
              SafeDate expDate, std::string country,
              bool prescription, std::string activeSubst, std::string instr);
 
-    // Запрещаем конструктор по умолчанию как у родителя
     Medicine();
     Medicine(const Medicine& other);
 

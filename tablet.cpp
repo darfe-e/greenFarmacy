@@ -64,14 +64,11 @@ Tablet& Tablet::operator=(const Tablet& other)
 
 std::ostream& operator<<(std::ostream& os, const Tablet& tablet)
 {
-    os << static_cast<const Medicine&>(tablet);
-
-    os << "Units per package: " << tablet.unitsPerPackage << "\n"
-       << "Dosage: " << tablet.dosageMg << " mg\n"
-       << "Coating: " << tablet.coating << "\n"
-       << "Dosage Form: " << tablet.getDosageForm() << "\n"
-       << "Administration: " << tablet.getAdministrationMethod() << "\n";
-
+    os << "[TABLET];"; // Маркер типа
+    os << static_cast<const Medicine&>(tablet) << ";"
+       << tablet.unitsPerPackage << ";"
+       << tablet.dosageMg << " mg" << ";"
+       << tablet.coating;
     return os;
 }
 
@@ -79,38 +76,48 @@ std::istream& operator>>(std::istream& is, Tablet& tablet)
 {
     try
     {
-        is >> static_cast<Medicine&>(tablet);
+        std::string line;
+        std::getline(is, line);
 
-        // Units per package
-        SafeInput::skipLabel(is); // "Units per package: "
-        tablet.unitsPerPackage = SafeInput::readPositiveInt(is, "Units per package");
+        std::istringstream iss(line);
+        std::vector<std::string> tokens;
+        std::string token;
 
-        // Dosage
-        SafeInput::skipLabel(is); // "Dosage: "
-        std::string dosageStr = SafeInput::readNonEmptyString(is, "Dosage");
+        while (std::getline(iss, token, ';')) {
+            tokens.push_back(token);
+        }
 
-        // Удаляем " mg" из строки
+        if (tokens.size() < 15) {
+            throw InvalidProductDataException("tablet data", "invalid number of fields");
+        }
+
+        // Восстанавливаем базовую информацию Medicine
+        std::istringstream medicineStream(tokens[0] + ";" + tokens[1] + ";" + tokens[2] + ";" + tokens[3] + ";" + tokens[4] + ";" + tokens[5] + ";" + tokens[6] + ";" + tokens[7] + ";" + tokens[8] + ";" + tokens[9]);
+        medicineStream >> static_cast<Medicine&>(tablet);
+
+        // Units per package (11-е поле)
+        std::istringstream unitsStream(tokens[10]);
+        tablet.unitsPerPackage = SafeInput::readPositiveInt(unitsStream, "Units per package");
+
+        // Dosage (12-е поле)
+        std::string dosageStr = tokens[11];
         size_t pos = dosageStr.find(" mg");
-        if (pos != std::string::npos)
-        {
+        if (pos != std::string::npos) {
             dosageStr = dosageStr.substr(0, pos);
         }
 
         tablet.dosageMg = std::stod(dosageStr);
-        if (tablet.dosageMg <= 0)
-        {
+        if (tablet.dosageMg <= 0) {
             throw InvalidProductDataException("Dosage", "must be positive");
         }
 
-        // Coating
-        SafeInput::skipLabel(is); // "Coating: "
-        tablet.coating = SafeInput::readNonEmptyString(is, "Coating");
+        // Coating (13-е поле)
+        tablet.coating = tokens[12];
+        if (tablet.coating.empty()) {
+            throw InvalidProductDataException("Coating", "cannot be empty");
+        }
 
-        // Пропускаем остальные поля
-        SafeInput::skipLabel(is); // "Dosage Form: "
-        SafeInput::skipLabel(is); // значение
-        SafeInput::skipLabel(is); // "Administration: "
-        SafeInput::skipLabel(is); // значение
+        // Dosage Form и Administration Method (14-е и 15-е поля) - только для вывода
 
     }
     catch (const std::invalid_argument&)

@@ -64,9 +64,10 @@ Supply& Supply::operator=(const Supply& other)
 
 std::ostream& operator<<(std::ostream& os, const Supply& supply)
 {
-    os << static_cast<const InventoryOperation&>(supply);
-    os << "Source: " << supply.source << "\n";
-    os << "Destination: " << supply.destination << "\n";
+    os << static_cast<const InventoryOperation&>(supply) << ";"
+       << supply.source << ";"
+       << supply.destination;
+
     return os;
 }
 
@@ -74,13 +75,35 @@ std::istream& operator>>(std::istream& is, Supply& supply)
 {
     try
     {
-        is >> static_cast<InventoryOperation&>(supply);
+        std::string line;
+        std::getline(is, line);
 
-        SafeInput::skipLabel(is); // "Source: "
-        supply.source = SafeInput::readNonEmptyString(is, "Supply source");
+        std::istringstream iss(line);
+        std::vector<std::string> tokens;
+        std::string token;
 
-        SafeInput::skipLabel(is); // "Destination: "
-        supply.destination = SafeInput::readNonEmptyString(is, "Supply destination");
+        while (std::getline(iss, token, ';')) {
+            tokens.push_back(token);
+        }
+
+        if (tokens.size() < 3) {
+            throw InventoryException("Invalid number of fields for supply operation");
+        }
+
+        // Восстанавливаем базовую операцию
+        std::istringstream baseStream(tokens[0]);
+        baseStream >> static_cast<InventoryOperation&>(supply);
+
+        // Source и Destination
+        supply.source = tokens[1];
+        if (supply.source.empty()) {
+            throw InventoryException("Supply source cannot be empty");
+        }
+
+        supply.destination = tokens[2];
+        if (supply.destination.empty()) {
+            throw InventoryException("Supply destination cannot be empty");
+        }
 
     }
     catch (const InventoryException&)

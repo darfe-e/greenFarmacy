@@ -10,6 +10,7 @@ CONFIG += c++17
 
 SOURCES += \
     Exception/safeinput.cpp \
+    Files/file_txt.cpp \
     addproductdialog.cpp \
     analoguesdialog.cpp \
     availabilitydialog.cpp \
@@ -25,6 +26,7 @@ SOURCES += \
     return.cpp \
     returnsdialog.cpp \
     safedate.cpp \
+    stockrecord.cpp \
     storage.cpp \
     suppliesdialog.cpp \
     supply.cpp \
@@ -55,9 +57,12 @@ HEADERS += \
     Exception/PharmacyExceptions/PharmacyException.h \
     Exception/PharmacyExceptions/ProductNotFoundException.h \
     Exception/safeinput.h \
+    Files/file.h \
+    Files/file_txt.h \
     addproductdialog.h \
     analoguesdialog.h \
     availabilitydialog.h \
+    file.h \
     filemanager.h \
     inventoryoperation.h \
     mainwindow.h \
@@ -69,6 +74,7 @@ HEADERS += \
     return.h \
     returnsdialog.h \
     safedate.h \
+    stockrecord.h \
     storage.h \
     suppliesdialog.h \
     supply.h \

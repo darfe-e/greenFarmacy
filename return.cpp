@@ -54,8 +54,9 @@ Return& Return::operator=(const Return& other)
 
 std::ostream& operator<<(std::ostream& os, const Return& returnOp)
 {
-    os << static_cast<const InventoryOperation&>(returnOp);
-    os << "Reason: " << returnOp.reason << "\n";
+    os << static_cast<const InventoryOperation&>(returnOp) << ";"
+       << returnOp.reason;
+
     return os;
 }
 
@@ -63,10 +64,30 @@ std::istream& operator>>(std::istream& is, Return& returnOp)
 {
     try
     {
-        is >> static_cast<InventoryOperation&>(returnOp);
+        std::string line;
+        std::getline(is, line);
 
-        SafeInput::skipLabel(is); // "Reason: "
-        returnOp.reason = SafeInput::readNonEmptyString(is, "Return reason");
+        std::istringstream iss(line);
+        std::vector<std::string> tokens;
+        std::string token;
+
+        while (std::getline(iss, token, ';')) {
+            tokens.push_back(token);
+        }
+
+        if (tokens.size() < 2) {
+            throw InventoryException("Invalid number of fields for return operation");
+        }
+
+        // Восстанавливаем базовую операцию
+        std::istringstream baseStream(tokens[0]);
+        baseStream >> static_cast<InventoryOperation&>(returnOp);
+
+        // Reason
+        returnOp.reason = tokens[1];
+        if (returnOp.reason.empty()) {
+            throw InventoryException("Return reason cannot be empty");
+        }
 
     }
     catch (const InventoryException&)

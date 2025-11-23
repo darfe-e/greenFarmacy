@@ -1,0 +1,130 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ru">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.9.8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>My Project: Исходный файл Exception/FileExceptions/FileParseException.h</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">My Project
+   </div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Создано системой Doxygen 1.9.8 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() {
+  initMenu('',true,false,'search.php','Поиск');
+  $(document).ready(function() { init_search(); });
+});
+/* @license-end */
+</script>
+<div id="main-nav"></div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(document).ready(function() { init_codefold(0); });
+/* @license-end */
+</script>
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Загрузка...</div>
+<div class="SRStatus" id="Searching">Поиск...</div>
+<div class="SRStatus" id="NoMatches">Не найдено</div>
+</div>
+</div>
+</div>
+</div>
+
+<div id="nav-path" class="navpath">
+  <ul>
+<li class="navelem"><a class="el" href="dir_723d7fe5d6ff5943cb1202e9b3b398a3.html">Exception</a></li><li class="navelem"><a class="el" href="dir_a02872bc6a9dd3fd13dab0ac1438548a.html">FileExceptions</a></li>  </ul>
+</div>
+</div><!-- top -->
+<div class="header">
+  <div class="headertitle"><div class="title">FileParseException.h</div></div>
+</div><!--header-->
+<div class="contents">
+<a href="FileParseException_8h.html">См. документацию.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="preprocessor">#ifndef FILEPARSEEXCEPTION_H</span></div>
+<div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span><span class="preprocessor">#define FILEPARSEEXCEPTION_H</span></div>
+<div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span> </div>
+<div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="preprocessor">#include &quot;<a class="code" href="FileOperationException_8h.html">FileOperationException.h</a>&quot;</span></div>
+<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span> </div>
+<div class="foldopen" id="foldopen00006" data-start="{" data-end="};">
+<div class="line"><a id="l00006" name="l00006"></a><span class="lineno"><a class="line" href="classFileParseException.html">    6</a></span><span class="keyword">class </span><a class="code hl_class" href="classFileParseException.html">FileParseException</a> : <span class="keyword">public</span> <a class="code hl_class" href="classFileOperationException.html">FileOperationException</a></div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span>{</div>
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno"><a class="line" href="classFileParseException.html#aa71086704d13a3b564acc1c10ee0c983">    9</a></span>    std::string <a class="code hl_variable" href="classFileParseException.html#aa71086704d13a3b564acc1c10ee0c983">filename</a>;</div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno"><a class="line" href="classFileParseException.html#ae76fb1bc13695ae2e0fd0c364ef9a8f6">   10</a></span>    <span class="keywordtype">int</span> <a class="code hl_variable" href="classFileParseException.html#ae76fb1bc13695ae2e0fd0c364ef9a8f6">lineNumber</a>;</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno"><a class="line" href="classFileParseException.html#a9056621d94de9d254bce8df62af5a0b3">   11</a></span>    std::string <a class="code hl_variable" href="classFileParseException.html#a9056621d94de9d254bce8df62af5a0b3">lineContent</a>;</div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="keyword">public</span>:</div>
+<div class="foldopen" id="foldopen00014" data-start="{" data-end="}">
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno"><a class="line" href="classFileParseException.html#ac29de395f98761a168b773d2eec3e66d">   14</a></span>    <a class="code hl_function" href="classFileParseException.html#ac29de395f98761a168b773d2eec3e66d">FileParseException</a>(<span class="keyword">const</span> std::string&amp; file, <span class="keywordtype">int</span> line, <span class="keyword">const</span> std::string&amp; content, <span class="keyword">const</span> std::string&amp; details = <span class="stringliteral">&quot;&quot;</span>)</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>        : <a class="code hl_class" href="classFileOperationException.html">FileOperationException</a>(<span class="stringliteral">&quot;Parse error in file &#39;&quot;</span> + file + <span class="stringliteral">&quot;&#39; at line &quot;</span> +</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>                                 std::to_string(line) + <span class="stringliteral">&quot;: &quot;</span> + details),</div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>        <a class="code hl_variable" href="classFileParseException.html#aa71086704d13a3b564acc1c10ee0c983">filename</a>(file), <a class="code hl_variable" href="classFileParseException.html#ae76fb1bc13695ae2e0fd0c364ef9a8f6">lineNumber</a>(line), <a class="code hl_variable" href="classFileParseException.html#a9056621d94de9d254bce8df62af5a0b3">lineContent</a>(content) {}</div>
+</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno"><a class="line" href="classFileParseException.html#ab5fd72a958bb865adef2cc3f87bb2c3e">   19</a></span>    std::string <a class="code hl_function" href="classFileParseException.html#ab5fd72a958bb865adef2cc3f87bb2c3e">getErrorCode</a>()<span class="keyword"> const override </span>{ <span class="keywordflow">return</span> <span class="stringliteral">&quot;FILE_PARSE_001&quot;</span>; }</div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno"><a class="line" href="classFileParseException.html#a637fad24f45bf12db5b3444ba5dfe586">   20</a></span>    std::string <a class="code hl_function" href="classFileParseException.html#a637fad24f45bf12db5b3444ba5dfe586">getFilename</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code hl_variable" href="classFileParseException.html#aa71086704d13a3b564acc1c10ee0c983">filename</a>; }</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno"><a class="line" href="classFileParseException.html#a8c86739c0efb654e1b51cc893ea0e5bf">   21</a></span>    <span class="keywordtype">int</span> <a class="code hl_function" href="classFileParseException.html#a8c86739c0efb654e1b51cc893ea0e5bf">getLineNumber</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code hl_variable" href="classFileParseException.html#ae76fb1bc13695ae2e0fd0c364ef9a8f6">lineNumber</a>; }</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="classFileParseException.html#a23cc6b91e740e3d774c4ea70544f1fc8">   22</a></span>    std::string <a class="code hl_function" href="classFileParseException.html#a23cc6b91e740e3d774c4ea70544f1fc8">getLineContent</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code hl_variable" href="classFileParseException.html#a9056621d94de9d254bce8df62af5a0b3">lineContent</a>; }</div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>};</div>
+</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#endif </span><span class="comment">// FILEPARSEEXCEPTION_H</span></div>
+<div class="ttc" id="aFileOperationException_8h_html"><div class="ttname"><a href="FileOperationException_8h.html">FileOperationException.h</a></div></div>
+<div class="ttc" id="aclassFileOperationException_html"><div class="ttname"><a href="classFileOperationException.html">FileOperationException</a></div><div class="ttdef"><b>Definition</b> FileOperationException.h:7</div></div>
+<div class="ttc" id="aclassFileParseException_html"><div class="ttname"><a href="classFileParseException.html">FileParseException</a></div><div class="ttdef"><b>Definition</b> FileParseException.h:7</div></div>
+<div class="ttc" id="aclassFileParseException_html_a23cc6b91e740e3d774c4ea70544f1fc8"><div class="ttname"><a href="classFileParseException.html#a23cc6b91e740e3d774c4ea70544f1fc8">FileParseException::getLineContent</a></div><div class="ttdeci">std::string getLineContent() const</div><div class="ttdef"><b>Definition</b> FileParseException.h:22</div></div>
+<div class="ttc" id="aclassFileParseException_html_a637fad24f45bf12db5b3444ba5dfe586"><div class="ttname"><a href="classFileParseException.html#a637fad24f45bf12db5b3444ba5dfe586">FileParseException::getFilename</a></div><div class="ttdeci">std::string getFilename() const</div><div class="ttdef"><b>Definition</b> FileParseException.h:20</div></div>
+<div class="ttc" id="aclassFileParseException_html_a8c86739c0efb654e1b51cc893ea0e5bf"><div class="ttname"><a href="classFileParseException.html#a8c86739c0efb654e1b51cc893ea0e5bf">FileParseException::getLineNumber</a></div><div class="ttdeci">int getLineNumber() const</div><div class="ttdef"><b>Definition</b> FileParseException.h:21</div></div>
+<div class="ttc" id="aclassFileParseException_html_a9056621d94de9d254bce8df62af5a0b3"><div class="ttname"><a href="classFileParseException.html#a9056621d94de9d254bce8df62af5a0b3">FileParseException::lineContent</a></div><div class="ttdeci">std::string lineContent</div><div class="ttdef"><b>Definition</b> FileParseException.h:11</div></div>
+<div class="ttc" id="aclassFileParseException_html_aa71086704d13a3b564acc1c10ee0c983"><div class="ttname"><a href="classFileParseException.html#aa71086704d13a3b564acc1c10ee0c983">FileParseException::filename</a></div><div class="ttdeci">std::string filename</div><div class="ttdef"><b>Definition</b> FileParseException.h:9</div></div>
+<div class="ttc" id="aclassFileParseException_html_ab5fd72a958bb865adef2cc3f87bb2c3e"><div class="ttname"><a href="classFileParseException.html#ab5fd72a958bb865adef2cc3f87bb2c3e">FileParseException::getErrorCode</a></div><div class="ttdeci">std::string getErrorCode() const override</div><div class="ttdef"><b>Definition</b> FileParseException.h:19</div></div>
+<div class="ttc" id="aclassFileParseException_html_ac29de395f98761a168b773d2eec3e66d"><div class="ttname"><a href="classFileParseException.html#ac29de395f98761a168b773d2eec3e66d">FileParseException::FileParseException</a></div><div class="ttdeci">FileParseException(const std::string &amp;file, int line, const std::string &amp;content, const std::string &amp;details=&quot;&quot;)</div><div class="ttdef"><b>Definition</b> FileParseException.h:14</div></div>
+<div class="ttc" id="aclassFileParseException_html_ae76fb1bc13695ae2e0fd0c364ef9a8f6"><div class="ttname"><a href="classFileParseException.html#ae76fb1bc13695ae2e0fd0c364ef9a8f6">FileParseException::lineNumber</a></div><div class="ttdeci">int lineNumber</div><div class="ttdef"><b>Definition</b> FileParseException.h:10</div></div>
+</div><!-- fragment --></div><!-- contents -->
+<!-- start footer part -->
+<hr class="footer"/><address class="footer"><small>
+Создано системой&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8
+</small></address>
+</body>
+</html>

@@ -45,12 +45,11 @@ std::ostream& operator<<(std::ostream& os, const MedicalProduct& prod)
 {
     SafeDate safeDate(prod.expirationDate);  // Создаем объект SafeDate
 
-    os << "Medicine information:\n"
-       << "id: " << prod.id << "\n"
-       << "Name: " << prod.name << "\n"
-       << "Base price: " << prod.basePrice << "\n"
-       << "Expiration date: " << safeDate.toString() << "\n"
-       << "Manufacturer country: " << prod.manufacturerCountry;
+    os << prod.id << ";"
+       << prod.name << ";"
+       << prod.basePrice << ";"
+       << safeDate.toString() << ";"
+       << prod.manufacturerCountry;
 
     return os;
 }
@@ -59,26 +58,63 @@ std::istream& operator>>(std::istream& is, MedicalProduct& prod)
 {
     try
     {
-        SafeInput::skipLabel(is); // "ID: "
-        prod.id = SafeInput::readProductId(is);
+        std::string line;
 
-        SafeInput::skipLabel(is); // "Name: "
-        prod.name = SafeInput::readNonEmptyString(is, "Product name");
+        // Читаем всю строку
+        std::getline(is, line);
 
-        SafeInput::skipLabel(is); // "Price: "
-        prod.basePrice = SafeInput::readPositiveDouble(is, "Price");
+        std::istringstream iss(line);
+        std::vector<std::string> tokens;
+        std::string token;
 
-        SafeInput::skipLabel(is); // "Expiration Date: "
-        std::string dateStr = SafeInput::readNonEmptyString(is, "Expiration date");
-        prod.expirationDate = SafeDate::fromString(dateStr);
+        // Разбиваем строку по разделителю ';'
+        while (std::getline(iss, token, ';')) {
+            tokens.push_back(token);
+        }
 
-        SafeInput::skipLabel(is); // "Manufacturer Country: "
-        prod.manufacturerCountry = SafeInput::readNonEmptyString(is, "Manufacturer country");
+        // Проверяем, что получили все 5 полей
+        if (tokens.size() != 5) {
+            throw InvalidProductDataException("input", "invalid number of fields");
+        }
+
+        // Заполняем поля продукта
+        prod.id = tokens[0];
+        prod.name = tokens[1];
+
+        // Преобразуем строки в числа с помощью SafeInput
+        std::istringstream priceStream(tokens[2]);
+        prod.basePrice = SafeInput::readPositiveDouble(priceStream, "Price");
+
+        prod.expirationDate = SafeDate::fromString(tokens[3]);
+        prod.manufacturerCountry = tokens[4];
 
         // Проверка срока годности
         if (prod.expirationDate.isExpired())
         {
             throw ExpiredProductException(prod.id, prod.expirationDate);
+        }
+
+        // Дополнительная валидация ID (как в readProductId)
+        if (prod.id.length() < 3)
+        {
+            throw InvalidProductIdException(prod.id);
+        }
+
+        for (char c : prod.id)
+        {
+            if (!std::isalnum(c) && c != '-')
+            {
+                throw InvalidProductIdException(prod.id);
+            }
+        }
+
+        // Проверка непустоты строковых полей
+        if (prod.name.empty()) {
+            throw InvalidProductDataException("Product name", "cannot be empty");
+        }
+
+        if (prod.manufacturerCountry.empty()) {
+            throw InvalidProductDataException("Manufacturer country", "cannot be empty");
         }
     }
     catch (const ExpiredProductException&)
@@ -96,7 +132,6 @@ std::istream& operator>>(std::istream& is, MedicalProduct& prod)
 
     return is;
 }
-
 MedicalProduct& MedicalProduct::operator=(const MedicalProduct& other)
 {
     if (this != &other)

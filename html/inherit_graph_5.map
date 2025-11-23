@@ -1,0 +1,15 @@
+<map id="Иерархия классов. Графический вид." name="Иерархия классов. Графический вид.">
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,129,80,155"/>
+<area shape="rect" id="Node000001" href="$classAddProductDialog.html" title=" " alt="" coords="128,5,267,31"/>
+<area shape="poly" id="edge8_Node000000_Node000001" title=" " alt="" coords="57,116,86,77,126,40,148,28,151,33,130,44,90,81,61,119"/>
+<area shape="rect" id="Node000002" href="$classAnaloguesDialog.html" title=" " alt="" coords="131,55,263,80"/>
+<area shape="poly" id="edge9_Node000000_Node000002" title=" " alt="" coords="73,119,127,89,155,78,157,83,129,94,76,124"/>
+<area shape="rect" id="Node000003" href="$classAvailabilityDialog.html" title=" " alt="" coords="129,104,266,129"/>
+<area shape="poly" id="edge10_Node000000_Node000003" title=" " alt="" coords="93,131,128,125,129,131,94,136"/>
+<area shape="rect" id="Node000004" href="$classReturnsDialog.html" title=" " alt="" coords="140,153,255,179"/>
+<area shape="poly" id="edge11_Node000000_Node000004" title=" " alt="" coords="94,147,140,154,139,160,93,152"/>
+<area shape="rect" id="Node000005" href="$classSuppliesDialog.html" title=" " alt="" coords="138,203,257,228"/>
+<area shape="poly" id="edge12_Node000000_Node000005" title=" " alt="" coords="77,159,129,188,160,200,157,205,127,192,74,164"/>
+<area shape="rect" id="Node000006" href="$classWriteOffsDialog.html" title=" " alt="" coords="135,252,260,277"/>
+<area shape="poly" id="edge13_Node000000_Node000006" title=" " alt="" coords="62,165,91,202,130,237,153,250,151,254,126,242,87,206,58,168"/>
+</map>

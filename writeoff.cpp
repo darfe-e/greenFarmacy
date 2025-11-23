@@ -58,8 +58,9 @@ WriteOff& WriteOff::operator=(const WriteOff& other)
 
 std::ostream& operator<<(std::ostream& os, const WriteOff& writeOff)
 {
-    os << static_cast<const InventoryOperation&>(writeOff);
-    os << "Write-off Reason: " << writeOff.writeOffReason << "\n";
+    os << static_cast<const InventoryOperation&>(writeOff) << ";"
+       << writeOff.writeOffReason;
+
     return os;
 }
 
@@ -67,10 +68,30 @@ std::istream& operator>>(std::istream& is, WriteOff& writeOff)
 {
     try
     {
-        is >> static_cast<InventoryOperation&>(writeOff);
+        std::string line;
+        std::getline(is, line);
 
-        SafeInput::skipLabel(is); // "Write-off Reason: "
-        writeOff.writeOffReason = SafeInput::readNonEmptyString(is, "Write-off reason");
+        std::istringstream iss(line);
+        std::vector<std::string> tokens;
+        std::string token;
+
+        while (std::getline(iss, token, ';')) {
+            tokens.push_back(token);
+        }
+
+        if (tokens.size() < 2) {
+            throw InventoryException("Invalid number of fields for write-off operation");
+        }
+
+        // Восстанавливаем базовую операцию
+        std::istringstream baseStream(tokens[0]);
+        baseStream >> static_cast<InventoryOperation&>(writeOff);
+
+        // Write-off Reason
+        writeOff.writeOffReason = tokens[1];
+        if (writeOff.writeOffReason.empty()) {
+            throw InventoryException("Write-off reason cannot be empty");
+        }
 
     }
     catch (const InventoryException&)

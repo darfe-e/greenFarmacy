@@ -116,19 +116,11 @@ Pharmacy& Pharmacy::operator=(const Pharmacy& other)
 
 std::ostream& operator<<(std::ostream& os, const Pharmacy& pharmacy)
 {
-    os << "Pharmacy ID: " << pharmacy.id << "\n"
-       << "Address: " << pharmacy.address << "\n"
-       << "Phone: " << pharmacy.phoneNumber << "\n"
-       << "Rent Cost: " << pharmacy.rentCost << "\n"
-       << "Products in storage: " << pharmacy.storage.items.size() << "\n";
-
-    // Выводим информацию о продуктах на складе
-    for (const auto& item : pharmacy.storage.items)
-    {
-        os << "  - " << item.second.first->getName()
-           << " (" << item.second.first->getId() << "): "
-           << item.second.second << " units\n";
-    }
+    os << pharmacy.id << ";"
+       << pharmacy.address << ";"
+       << pharmacy.phoneNumber << ";"
+       << pharmacy.rentCost << ";"
+       << pharmacy.storage.items.size();
 
     return os;
 }
@@ -137,20 +129,40 @@ std::istream& operator>>(std::istream& is, Pharmacy& pharmacy)
 {
     try
     {
-        SafeInput::skipLabel(is); // "Pharmacy ID: "
-        pharmacy.id = SafeInput::readNonEmptyString(is, "Pharmacy ID");
+        std::string line;
+        std::getline(is, line);
 
-        SafeInput::skipLabel(is); // "Address: "
-        pharmacy.address = SafeInput::readNonEmptyString(is, "Address");
+        std::istringstream iss(line);
+        std::vector<std::string> tokens;
+        std::string token;
 
-        SafeInput::skipLabel(is); // "Phone: "
-        pharmacy.phoneNumber = SafeInput::readNonEmptyString(is, "Phone number");
+        while (std::getline(iss, token, ';')) {
+            tokens.push_back(token);
+        }
 
-        SafeInput::skipLabel(is); // "Rent Cost: "
-        pharmacy.rentCost = SafeInput::readPositiveDouble(is, "Rent cost");
+        if (tokens.size() != 5) {
+            throw InvalidProductDataException("pharmacy data", "invalid number of fields");
+        }
 
-        // Пропускаем информацию о продуктах
-        SafeInput::skipLabel(is); // "Products in storage: X"
+        pharmacy.id = tokens[0];
+        if (pharmacy.id.empty()) {
+            throw InvalidProductDataException("Pharmacy ID", "cannot be empty");
+        }
+
+        pharmacy.address = tokens[1];
+        if (pharmacy.address.empty()) {
+            throw InvalidProductDataException("Address", "cannot be empty");
+        }
+
+        pharmacy.phoneNumber = tokens[2];
+        if (pharmacy.phoneNumber.empty()) {
+            throw InvalidProductDataException("Phone number", "cannot be empty");
+        }
+
+        std::istringstream rentStream(tokens[3]);
+        pharmacy.rentCost = SafeInput::readPositiveDouble(rentStream, "Rent cost");
+
+        // Количество продуктов (5-е поле) - только для информации
 
     }
     catch (const PharmacyException&)
@@ -164,7 +176,6 @@ std::istream& operator>>(std::istream& is, Pharmacy& pharmacy)
 
     return is;
 }
-
 std::shared_ptr<MedicalProduct> Pharmacy::findProduct(const std::string& productNameOrId) const
 {
     auto allProducts = getAllProducts();

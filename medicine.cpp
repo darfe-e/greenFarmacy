@@ -129,24 +129,17 @@ Medicine& Medicine::operator=(const Medicine& other)
     return *this;
 }
 
-// Оператор вывода
 std::ostream& operator<<(std::ostream& os, const Medicine& med)
 {
     // Выводим базовую информацию
-    os << static_cast<const MedicalProduct&>(med);
+    os << static_cast<const MedicalProduct&>(med) << ";";
 
     // Выводим специфичную для Medicine информацию
-    os << "Prescription: " << (med.isPrescription ? "Yes" : "No") << "\n"
-       << "Active Substance: " << med.activeSubstance << "\n"
-       << "Instructions: " << med.instructions << "\n"
-       << "Dosage Form: " << med.getDosageForm() << "\n"
-       << "Administration Method: " << med.getAdministrationMethod() << "\n";
-
-    // Выводим аналоги
-    os << "Analogues (" << med.analogues.size() << "):\n";
-    for (const auto& analogue : med.analogues) {
-        os << "  - " << analogue->getName() << " (" << analogue->getId() << ")\n";
-    }
+    os << (med.isPrescription ? "Yes" : "No") << ";"
+       << med.activeSubstance << ";"
+       << med.instructions << ";"
+       << med.getDosageForm() << ";"
+       << med.getAdministrationMethod();
 
     return os;
 }
@@ -155,45 +148,48 @@ std::istream& operator>>(std::istream& is, Medicine& med)
 {
     try
     {
-        // Читаем базовую информацию
-        is >> static_cast<MedicalProduct&>(med);
-
-        // Prescription
-        SafeInput::skipLabel(is); // "Prescription: "
-        med.isPrescription = SafeInput::readBoolean(is, "Prescription status");
-
-        // Active Substance
-        SafeInput::skipLabel(is); // "Active Substance: "
-        med.activeSubstance = SafeInput::readNonEmptyString(is, "Active substance");
-
-        // Instructions
-        SafeInput::skipLabel(is); // "Instructions: "
-        med.instructions = SafeInput::readNonEmptyString(is, "Instructions");
-
-        // Пропускаем виртуальные поля
-        SafeInput::skipLabel(is); // "Dosage Form: "
-        SafeInput::skipLabel(is); // значение
-        SafeInput::skipLabel(is); // "Administration Method: "
-        SafeInput::skipLabel(is); // значение
-
-        // Очищаем аналоги
-        med.analogues.clear();
-
-        // Пропускаем информацию об аналогах
         std::string line;
-        std::getline(is, line); // "Analogues (X):"
-        while (std::getline(is, line))
-        {
-            if (line.empty() || line[0] != ' ')
-            {
-                is.putback('\n');
-                for (auto it = line.rbegin(); it != line.rend(); ++it)
-                {
-                    is.putback(*it);
-                }
-                break;
-            }
+        std::getline(is, line);
+
+        std::istringstream iss(line);
+        std::vector<std::string> tokens;
+        std::string token;
+
+        // Разбиваем строку по разделителю ';'
+        while (std::getline(iss, token, ';')) {
+            tokens.push_back(token);
         }
+
+        // Проверяем, что получили все поля (базовые + специфичные)
+        if (tokens.size() < 10) {
+            throw InvalidProductDataException("medicine data", "invalid number of fields");
+        }
+
+        // Восстанавливаем базовую информацию из первых 5 полей
+        std::istringstream baseStream(tokens[0] + ";" + tokens[1] + ";" + tokens[2] + ";" + tokens[3] + ";" + tokens[4]);
+        baseStream >> static_cast<MedicalProduct&>(med);
+
+        // Заполняем специфичные поля Medicine
+        // Prescription (6-е поле)
+        std::istringstream prescriptionStream(tokens[5]);
+        med.isPrescription = SafeInput::readBoolean(prescriptionStream, "Prescription status");
+
+        // Active Substance (7-е поле)
+        med.activeSubstance = tokens[6];
+        if (med.activeSubstance.empty()) {
+            throw InvalidProductDataException("Active substance", "cannot be empty");
+        }
+
+        // Instructions (8-е поле)
+        med.instructions = tokens[7];
+        if (med.instructions.empty()) {
+            throw InvalidProductDataException("Instructions", "cannot be empty");
+        }
+
+        // Dosage Form и Administration Method (9-е и 10-е поля) - только для вывода
+
+        // Очищаем аналоги (не сохраняем в потоковом вводе/выводе)
+        med.analogues.clear();
 
     }
     catch (const PharmacyException&)

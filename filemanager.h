@@ -17,30 +17,53 @@
 #include <fstream>
 #include <sstream>
 #include "safedate.h"
+#include "Files/file_txt.h"
+#include "stockrecord.h"
 
 class FileManager
 {
-public:
-    // // Загрузка данных
-    // static std::map<std::string, std::shared_ptr<MedicalProduct>> loadProducts(const std::string& filename);
-    // static std::map<std::string, std::shared_ptr<Pharmacy>> loadPharmacies(const std::string& filename);
-    // static std::vector<std::shared_ptr<InventoryOperation>> loadOperations(const std::string& filename);
-
-    // // Сохранение данных
-    // static void saveProducts(const std::string& filename, const std::map<std::string, std::shared_ptr<MedicalProduct>>& products);
-    // static void savePharmacies(const std::string& filename, const std::map<std::string, std::shared_ptr<Pharmacy>>& pharmacies);
-    // static void saveOperations(const std::string& filename, const std::vector<std::shared_ptr<InventoryOperation>>& operations);
-
 private:
-    // // Вспомогательные методы для парсинга
-    // static std::shared_ptr<MedicalProduct> parseProductLine(const std::string& line);
-    // static std::shared_ptr<Pharmacy> parsePharmacyLine(const std::string& line);
-    // static std::shared_ptr<InventoryOperation> parseOperationLine(const std::string& line);
+    static FileManager* instance;
 
-    // // Вспомогательные методы для сериализации
-    // static std::string serializeProduct(const std::shared_ptr<MedicalProduct>& product);
-    // static std::string serializePharmacy(const std::shared_ptr<Pharmacy>& pharmacy);
-    // static std::string serializeOperation(const std::shared_ptr<InventoryOperation>& operation);
+    // Файлы для разных типов данных
+    File_text<std::string> medicinesFile; // Меняем на string и парсим вручную
+    File_text<Pharmacy> pharmaciesFile;
+    File_text<InventoryOperation> inventoryOperationsFile;
+    File_text<StockRecord> stockFile;
+
+    FileManager();
+
+public:
+    // Удаляем копирование и присваивание
+    FileManager(const FileManager&) = delete;
+    FileManager& operator=(const FileManager&) = delete;
+
+    static FileManager& getInstance();
+
+    // Методы для работы с файлом medicines.txt
+    bool loadMedicines(std::vector<std::shared_ptr<Medicine>>& medicines);
+    bool saveMedicines(const std::vector<std::shared_ptr<Medicine>>& medicines);
+    bool addMedicine(std::shared_ptr<Medicine> medicine);
+
+    // Методы для работы с файлом pharmacies.txt
+    bool loadPharmacies(std::vector<Pharmacy>& pharmacies);
+    bool savePharmacies(const std::vector<Pharmacy>& pharmacies);
+
+    // Методы для работы с файлом stock.txt
+    bool loadStockData(std::vector<Pharmacy>& pharmacies, const std::vector<std::shared_ptr<Medicine>>& medicines);
+    bool saveStockData(const std::vector<Pharmacy>& pharmacies);
+
+    // Эффективный поиск препарата по всем аптекам
+    std::map<std::string, int> findProductInPharmacies(const std::string& productId);
+    std::vector<std::string> findPharmaciesWithProduct(const std::string& productId);
+
+    // Методы для работы с общим файлом инвентарных операций
+    bool loadInventoryOperations(std::vector<std::shared_ptr<InventoryOperation>>& operations);
+    bool saveInventoryOperations(const std::vector<std::shared_ptr<InventoryOperation>>& operations);
+    bool addInventoryOperation(std::shared_ptr<InventoryOperation> operation);
+
+    // Закрытие всех файлов
+    void closeAllFiles();
 };
 
-#endif
+#endif // FILEMANAGER_H

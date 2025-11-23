@@ -1,0 +1,129 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ru">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=11"/>
+<meta name="generator" content="Doxygen 1.9.8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>My Project: Исходный файл safedate.h</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr id="projectrow">
+  <td id="projectalign">
+   <div id="projectname">My Project
+   </div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- Создано системой Doxygen 1.9.8 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+var searchBox = new SearchBox("searchBox", "search/",'.html');
+/* @license-end */
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(function() {
+  initMenu('',true,false,'search.php','Поиск');
+  $(document).ready(function() { init_search(); });
+});
+/* @license-end */
+</script>
+<div id="main-nav"></div>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:d3d9a9a6595521f9666a5e94cc830dab83b65699&amp;dn=expat.txt MIT */
+$(document).ready(function() { init_codefold(0); });
+/* @license-end */
+</script>
+</div><!-- top -->
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<div id="MSearchResults">
+<div class="SRPage">
+<div id="SRIndex">
+<div id="SRResults"></div>
+<div class="SRStatus" id="Loading">Загрузка...</div>
+<div class="SRStatus" id="Searching">Поиск...</div>
+<div class="SRStatus" id="NoMatches">Не найдено</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="header">
+  <div class="headertitle"><div class="title">safedate.h</div></div>
+</div><!--header-->
+<div class="contents">
+<a href="safedate_8h.html">См. документацию.</a><div class="fragment"><div class="line"><a id="l00001" name="l00001"></a><span class="lineno">    1</span><span class="preprocessor">#ifndef SAFEDATE_H</span></div>
+<div class="line"><a id="l00002" name="l00002"></a><span class="lineno">    2</span><span class="preprocessor">#define SAFEDATE_H</span></div>
+<div class="line"><a id="l00003" name="l00003"></a><span class="lineno">    3</span> </div>
+<div class="line"><a id="l00004" name="l00004"></a><span class="lineno">    4</span><span class="preprocessor">#include &lt;ctime&gt;</span></div>
+<div class="line"><a id="l00005" name="l00005"></a><span class="lineno">    5</span><span class="preprocessor">#include &lt;stdexcept&gt;</span></div>
+<div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span><span class="preprocessor">#include &lt;string&gt;</span></div>
+<div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span> </div>
+<div class="foldopen" id="foldopen00008" data-start="{" data-end="};">
+<div class="line"><a id="l00008" name="l00008"></a><span class="lineno"><a class="line" href="classSafeDate.html">    8</a></span><span class="keyword">class </span><a class="code hl_class" href="classSafeDate.html">SafeDate</a></div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span>{</div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno"><a class="line" href="classSafeDate.html#a2cc5a24376c0995c0a0fea97d1ea419e">   11</a></span>    std::tm <a class="code hl_variable" href="classSafeDate.html#a2cc5a24376c0995c0a0fea97d1ea419e">date</a>;</div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span> </div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>    <a class="code hl_class" href="classSafeDate.html">SafeDate</a>(<span class="keywordtype">int</span> year, <span class="keywordtype">int</span> month, <span class="keywordtype">int</span> day);</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span>    <a class="code hl_class" href="classSafeDate.html">SafeDate</a>(<span class="keyword">const</span> std::tm&amp; tmDate);</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>    <a class="code hl_class" href="classSafeDate.html">SafeDate</a> (<span class="keyword">const</span> <a class="code hl_class" href="classSafeDate.html">SafeDate</a>&amp; other);</div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>    <a class="code hl_class" href="classSafeDate.html">SafeDate</a>&amp; <a class="code hl_function" href="classSafeDate.html#a58ff1ef4562c69a7ceda8f04bf558fdc">operator= </a>(<span class="keyword">const</span> <a class="code hl_class" href="classSafeDate.html">SafeDate</a>&amp; other);</div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span> </div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno"><a class="line" href="classSafeDate.html#a01c083ad39094784714c81f952619e2e">   20</a></span>    <span class="keyword">const</span> std::tm&amp; <a class="code hl_function" href="classSafeDate.html#a01c083ad39094784714c81f952619e2e">getTm</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code hl_variable" href="classSafeDate.html#a2cc5a24376c0995c0a0fea97d1ea419e">date</a>; }</div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>    <span class="keywordtype">bool</span> <a class="code hl_function" href="classSafeDate.html#aba042239e399723e7bc3e0af25482686">isExpired</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>    std::string <a class="code hl_function" href="classSafeDate.html#a3b291bce3a0d9197074ae3f6a10d6c6b">toString</a>() <span class="keyword">const</span>;</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span> </div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno"><a class="line" href="classSafeDate.html#a9f46325adb8262d7b1cdee7d33ecf9d8">   25</a></span>    <span class="keywordtype">int</span> <a class="code hl_function" href="classSafeDate.html#a9f46325adb8262d7b1cdee7d33ecf9d8">getYear</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code hl_variable" href="classSafeDate.html#a2cc5a24376c0995c0a0fea97d1ea419e">date</a>.tm_year + 1900; }</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno"><a class="line" href="classSafeDate.html#ae6cc284f745cc81f938993b814133de1">   26</a></span>    <span class="keywordtype">int</span> <a class="code hl_function" href="classSafeDate.html#ae6cc284f745cc81f938993b814133de1">getMonth</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code hl_variable" href="classSafeDate.html#a2cc5a24376c0995c0a0fea97d1ea419e">date</a>.tm_mon + 1; }</div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="classSafeDate.html#a427a1184a28090543f574f798c1b3d69">   27</a></span>    <span class="keywordtype">int</span> <a class="code hl_function" href="classSafeDate.html#a427a1184a28090543f574f798c1b3d69">getDay</a>()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> <a class="code hl_variable" href="classSafeDate.html#a2cc5a24376c0995c0a0fea97d1ea419e">date</a>.tm_mday; }</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>    <span class="keyword">static</span> <a class="code hl_class" href="classSafeDate.html">SafeDate</a> <a class="code hl_function" href="classSafeDate.html#a5070a31a0d3b3a91b8411220d6c840a6">fromString</a>(<span class="keyword">const</span> std::string&amp; dateStr);</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>};</div>
+</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span> </div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span><span class="preprocessor">#endif </span><span class="comment">// SAFEDATE_H</span></div>
+<div class="ttc" id="aclassSafeDate_html"><div class="ttname"><a href="classSafeDate.html">SafeDate</a></div><div class="ttdef"><b>Definition</b> safedate.h:9</div></div>
+<div class="ttc" id="aclassSafeDate_html_a01c083ad39094784714c81f952619e2e"><div class="ttname"><a href="classSafeDate.html#a01c083ad39094784714c81f952619e2e">SafeDate::getTm</a></div><div class="ttdeci">const std::tm &amp; getTm() const</div><div class="ttdef"><b>Definition</b> safedate.h:20</div></div>
+<div class="ttc" id="aclassSafeDate_html_a2cc5a24376c0995c0a0fea97d1ea419e"><div class="ttname"><a href="classSafeDate.html#a2cc5a24376c0995c0a0fea97d1ea419e">SafeDate::date</a></div><div class="ttdeci">std::tm date</div><div class="ttdef"><b>Definition</b> safedate.h:11</div></div>
+<div class="ttc" id="aclassSafeDate_html_a3b291bce3a0d9197074ae3f6a10d6c6b"><div class="ttname"><a href="classSafeDate.html#a3b291bce3a0d9197074ae3f6a10d6c6b">SafeDate::toString</a></div><div class="ttdeci">std::string toString() const</div><div class="ttdef"><b>Definition</b> safedate.cpp:67</div></div>
+<div class="ttc" id="aclassSafeDate_html_a427a1184a28090543f574f798c1b3d69"><div class="ttname"><a href="classSafeDate.html#a427a1184a28090543f574f798c1b3d69">SafeDate::getDay</a></div><div class="ttdeci">int getDay() const</div><div class="ttdef"><b>Definition</b> safedate.h:27</div></div>
+<div class="ttc" id="aclassSafeDate_html_a5070a31a0d3b3a91b8411220d6c840a6"><div class="ttname"><a href="classSafeDate.html#a5070a31a0d3b3a91b8411220d6c840a6">SafeDate::fromString</a></div><div class="ttdeci">static SafeDate fromString(const std::string &amp;dateStr)</div><div class="ttdef"><b>Definition</b> safedate.cpp:74</div></div>
+<div class="ttc" id="aclassSafeDate_html_a58ff1ef4562c69a7ceda8f04bf558fdc"><div class="ttname"><a href="classSafeDate.html#a58ff1ef4562c69a7ceda8f04bf558fdc">SafeDate::operator=</a></div><div class="ttdeci">SafeDate &amp; operator=(const SafeDate &amp;other)</div><div class="ttdef"><b>Definition</b> safedate.cpp:39</div></div>
+<div class="ttc" id="aclassSafeDate_html_a9f46325adb8262d7b1cdee7d33ecf9d8"><div class="ttname"><a href="classSafeDate.html#a9f46325adb8262d7b1cdee7d33ecf9d8">SafeDate::getYear</a></div><div class="ttdeci">int getYear() const</div><div class="ttdef"><b>Definition</b> safedate.h:25</div></div>
+<div class="ttc" id="aclassSafeDate_html_aba042239e399723e7bc3e0af25482686"><div class="ttname"><a href="classSafeDate.html#aba042239e399723e7bc3e0af25482686">SafeDate::isExpired</a></div><div class="ttdeci">bool isExpired() const</div><div class="ttdef"><b>Definition</b> safedate.cpp:59</div></div>
+<div class="ttc" id="aclassSafeDate_html_ae6cc284f745cc81f938993b814133de1"><div class="ttname"><a href="classSafeDate.html#ae6cc284f745cc81f938993b814133de1">SafeDate::getMonth</a></div><div class="ttdeci">int getMonth() const</div><div class="ttdef"><b>Definition</b> safedate.h:26</div></div>
+</div><!-- fragment --></div><!-- contents -->
+<!-- start footer part -->
+<hr class="footer"/><address class="footer"><small>
+Создано системой&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.8
+</small></address>
+</body>
+</html>

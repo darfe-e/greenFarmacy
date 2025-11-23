@@ -1,0 +1,32 @@
+# Найдите и измените эти строки в Doxyfile:
+
+# Включить документацию для всех сущностей
+EXTRACT_ALL = YES
+
+# Включить приватные и защищенные члены
+EXTRACT_PRIVATE = YES
+EXTRACT_STATIC = YES
+
+# Включить диаграммы (Graphviz)
+HAVE_DOT = YES
+CLASS_DIAGRAMS = YES
+CLASS_GRAPH = YES
+COLLABORATION_GRAPH = YES
+
+# Указать путь к исходным файлам
+INPUT = ./
+
+# Рекурсивный обход папок
+RECURSIVE = YES
+
+# Язык документации
+OUTPUT_LANGUAGE = Russian
+
+# Отключить LaTeX (если не нужен)
+GENERATE_LATEX = NO
+
+# Включить HTML (основной формат)
+GENERATE_HTML = YES
+
+# Формат изображений для диаграмм
+DOT_IMAGE_FORMAT = svg

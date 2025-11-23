@@ -1,0 +1,23 @@
+<map id="addproductdialog.h" name="addproductdialog.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="507,5,653,31"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,79,80,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="507,29,323,48,94,81,93,76,323,43,506,23"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="105,79,189,104"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="507,32,203,81,202,76,506,27"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="213,79,315,104"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="530,33,329,78,328,73,529,28"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="339,79,423,104"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="549,33,428,76,426,71,547,28"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="448,79,579,104"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="571,33,535,70,532,67,567,29"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="603,79,691,104"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="593,29,628,67,625,70,589,33"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="715,79,813,104"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="611,28,722,71,720,76,609,33"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="837,79,899,104"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="629,28,824,76,823,81,628,33"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="924,79,1009,104"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="647,28,911,76,910,81,646,33"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="1033,79,1129,104"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="654,25,818,46,1020,76,1019,81,817,52,653,31"/>
+</map>

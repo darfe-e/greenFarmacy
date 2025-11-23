@@ -1,0 +1,9 @@
+<map id="writeoffsdialog.h" name="writeoffsdialog.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="215,5,346,31"/>
+<area shape="rect" id="Node000002" href="$moc__writeoffsdialog_8cpp.html" title=" " alt="" coords="5,79,191,119"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="243,39,143,81,141,76,240,34"/>
+<area shape="rect" id="Node000003" href="$mainwindow_8cpp.html" title=" " alt="" coords="215,86,346,111"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="283,44,283,86,278,86,278,44"/>
+<area shape="rect" id="Node000004" href="$writeoffsdialog_8cpp.html" title=" " alt="" coords="370,86,517,111"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="318,34,421,84,418,88,315,39"/>
+</map>

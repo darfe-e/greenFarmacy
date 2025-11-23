@@ -15,7 +15,7 @@ public:
           SafeDate expDate, std::string country,
           bool prescription, std::string activeSubst, std::string instr,
           double volume, bool sugar, std::string flavor);
-    //Syrup();
+    Syrup(){};
     Syrup(const Syrup& other);
     ~Syrup() override = default;
 

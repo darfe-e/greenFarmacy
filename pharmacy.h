@@ -11,7 +11,7 @@ class Pharmacy
 {
 private:
     std::string id;
-    std::string name;  // Убрать const
+    std::string name;
     std::string address;
     std::string phoneNumber;
     double rentCost;
@@ -19,7 +19,6 @@ private:
     Storage storage;
 
 public:
-    // Добавить параметр name в конструктор
     Pharmacy(const std::string& id, const std::string& name, const std::string& addr, const std::string& phone,
              double rent);
     Pharmacy();

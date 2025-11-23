@@ -5,6 +5,12 @@
 #include <string>
 #include <ctime>
 #include "safedate.h"
+#include <iostream>
+#include <sstream>    // для std::istringstream
+#include <vector>     // для std::vector
+#include <string>
+#include <cctype>     // для std::isalnum
+#include <limits>
 
 class MedicalProduct
 {
