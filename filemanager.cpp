@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <memory>
 #include <map>
+#include "QDebug"
 
 FileManager* FileManager::instance = nullptr;
 
@@ -21,103 +22,227 @@ FileManager& FileManager::getInstance() {
     return *instance;
 }
 
+bool FileManager::truncateMedicinesFile() {
+    try {
+        if (!medicinesFile.Open_file_trunc()) {
+            qDebug() << "Не удалось открыть medicines.txt для очистки";
+            return false;
+        }
+        qDebug() << "Файл medicines.txt очищен";
+        return true;
+    } catch (const std::exception& e) {
+        qDebug() << "Ошибка при очистке файла medicines.txt:" << e.what();
+        return false;
+    }
+}
+
 // Методы для работы с файлом medicines.txt
 bool FileManager::loadMedicines(std::vector<std::shared_ptr<Medicine>>& medicines) {
     try {
-        if (!medicinesFile.Open_file_in()) return false;
+        qDebug() << "=== ЗАГРУЗКА ЛЕКАРСТВ ИЗ ФАЙЛА ===";
+
+        // ЗАКРЫВАЕМ ФАЙЛ ПЕРЕД ОТКРЫТИЕМ ДЛЯ ЧТЕНИЯ
+        medicinesFile.Close_file_in();
+
+        if (!medicinesFile.Open_file_in()) {
+            qDebug() << "Файл medicines.txt не существует или не может быть открыт";
+            return false;
+        }
 
         medicines.clear();
         std::string line;
+        int lineNumber = 0;
+        int loadedCount = 0;
 
-        while (!medicinesFile.R_end_file()) {
-            medicinesFile.Read_string_line(line);
-            if (!medicinesFile.R_end_file() && !line.empty()) {
+        // ИСПРАВЛЕННАЯ ЛОГИКА ЧТЕНИЯ
+        while (true) {
+            try {
+                medicinesFile.Read_string_line(line);
+                lineNumber++;
+                qDebug() << "Строка" << lineNumber << ":" << QString::fromStdString(line);
 
-                // Определяем тип по маркеру в начале строки
+                // Обработка строки
                 if (line.find("[TABLET];") == 0) {
                     Tablet tablet;
-                    std::istringstream iss(line.substr(9)); // Пропускаем маркер
-                    iss >> tablet;
-                    medicines.push_back(std::make_shared<Tablet>(tablet));
+                    std::string remainingLine = line.substr(9);
+                    std::istringstream tabletStream(remainingLine);
+                    tabletStream >> tablet;
+                    if (!tabletStream.fail()) {
+                        medicines.push_back(std::make_shared<Tablet>(tablet));
+                        loadedCount++;
+                        qDebug() << "✓ Загружена таблетка:" << QString::fromStdString(tablet.getName());
+                    } else {
+                        qDebug() << "✗ Ошибка парсинга таблетки";
+                    }
                 }
                 else if (line.find("[SYRUP];") == 0) {
                     Syrup syrup;
-                    std::istringstream iss(line.substr(8)); // Пропускаем маркер
-                    iss >> syrup;
-                    medicines.push_back(std::make_shared<Syrup>(syrup));
+                    std::string remainingLine = line.substr(8);
+                    std::istringstream syrupStream(remainingLine);
+                    syrupStream >> syrup;
+                    if (!syrupStream.fail()) {
+                        medicines.push_back(std::make_shared<Syrup>(syrup));
+                        loadedCount++;
+                        qDebug() << "✓ Загружен сироп:" << QString::fromStdString(syrup.getName());
+                    } else {
+                        qDebug() << "✗ Ошибка парсинга сиропа";
+                    }
                 }
                 else if (line.find("[OINTMENT];") == 0) {
                     Ointment ointment;
-                    std::istringstream iss(line.substr(11)); // Пропускаем маркер
-                    iss >> ointment;
-                    medicines.push_back(std::make_shared<Ointment>(ointment));
+                    std::string remainingLine = line.substr(11);
+                    std::istringstream ointmentStream(remainingLine);
+                    ointmentStream >> ointment;
+                    if (!ointmentStream.fail()) {
+                        medicines.push_back(std::make_shared<Ointment>(ointment));
+                        loadedCount++;
+                        qDebug() << "✓ Загружена мазь:" << QString::fromStdString(ointment.getName());
+                    } else {
+                        qDebug() << "✗ Ошибка парсинга мази";
+                    }
+                } else {
+                    qDebug() << "✗ Неизвестный тип в строке:" << lineNumber;
+                }
+            }
+            catch (const std::runtime_error& e) {
+                // Ловим исключение конца файла и выходим из цикла
+                if (std::string(e.what()).find("End of file") != std::string::npos) {
+                    qDebug() << "Достигнут конец файла";
+                    break;
+                } else {
+                    // Другие ошибки - логируем и продолжаем
+                    qDebug() << "Ошибка чтения строки" << lineNumber << ":" << e.what();
                 }
             }
         }
+
+        medicinesFile.Close_file_in();
+        qDebug() << "=== ЗАГРУЗКА ЗАВЕРШЕНА: " << loadedCount << "лекарств ===";
         return true;
     } catch (const std::exception& e) {
+        qDebug() << "!!! ОБЩАЯ ОШИБКА ЗАГРУЗКИ:" << e.what();
+        medicinesFile.Close_file_in();
         return false;
     }
 }
 
 bool FileManager::saveMedicines(const std::vector<std::shared_ptr<Medicine>>& medicines) {
     try {
-        if (!medicinesFile.Open_file_out()) return false;
+        qDebug() << "=== СОХРАНЕНИЕ" << medicines.size() << "ЛЕКАРСТВ В ФАЙЛ ===";
 
+        // Закрываем файл перед открытием в новом режиме
+        medicinesFile.Close_file_o();
+
+        if (!medicinesFile.Open_file_trunc()) {  // Используем trunc для полной перезаписи
+            qDebug() << "Не удалось открыть medicines.txt для записи";
+            return false;
+        }
+
+        int savedCount = 0;
         for (const auto& med : medicines) {
             if (med) {
-                // Используем dynamic_cast для определения типа и записываем как строку
-                if (auto tablet = std::dynamic_pointer_cast<Tablet>(med)) {
-                    Tablet tempTablet = *tablet;
-                    std::ostringstream oss;
-                    oss << tempTablet;
-                    medicinesFile.Write_string_line(oss.str());
-                }
-                else if (auto syrup = std::dynamic_pointer_cast<Syrup>(med)) {
-                    Syrup tempSyrup = *syrup;
-                    std::ostringstream oss;
-                    oss << tempSyrup;
-                    medicinesFile.Write_string_line(oss.str());
-                }
-                else if (auto ointment = std::dynamic_pointer_cast<Ointment>(med)) {
-                    Ointment tempOintment = *ointment;
-                    std::ostringstream oss;
-                    oss << tempOintment;
-                    medicinesFile.Write_string_line(oss.str());
+                try {
+                    if (auto tablet = std::dynamic_pointer_cast<Tablet>(med)) {
+                        Tablet tempTablet = *tablet;
+                        std::ostringstream oss;
+                        oss << tempTablet;
+                        std::string line = oss.str();
+                        medicinesFile.Write_string_line(line);
+                        savedCount++;
+                        qDebug() << "✓ Сохранена таблетка:" << QString::fromStdString(tablet->getName());
+                    }
+                    else if (auto syrup = std::dynamic_pointer_cast<Syrup>(med)) {
+                        Syrup tempSyrup = *syrup;
+                        std::ostringstream oss;
+                        oss << tempSyrup;
+                        std::string line = oss.str();
+                        medicinesFile.Write_string_line(line);
+                        savedCount++;
+                        qDebug() << "✓ Сохранен сироп:" << QString::fromStdString(syrup->getName());
+                    }
+                    else if (auto ointment = std::dynamic_pointer_cast<Ointment>(med)) {
+                        Ointment tempOintment = *ointment;
+                        std::ostringstream oss;
+                        oss << tempOintment;
+                        std::string line = oss.str();
+                        medicinesFile.Write_string_line(line);
+                        savedCount++;
+                        qDebug() << "✓ Сохранена мазь:" << QString::fromStdString(ointment->getName());
+                    }
+                } catch (const std::exception& e) {
+                    qDebug() << "✗ Ошибка сохранения лекарства:" << e.what();
                 }
             }
         }
+
+        medicinesFile.Flush();  // Сбрасываем буфер
+        medicinesFile.Close_file_o();  // Закрываем файл
+
+        qDebug() << "=== СОХРАНЕНИЕ ЗАВЕРШЕНО: " << savedCount << "лекарств ===";
         return true;
     } catch (const std::exception& e) {
+        qDebug() << "!!! ОБЩАЯ ОШИБКА СОХРАНЕНИЯ:" << e.what();
         return false;
     }
 }
 
 bool FileManager::addMedicine(std::shared_ptr<Medicine> medicine) {
     try {
-        if (!medicinesFile.Open_file_out()) return false;
+        qDebug() << "=== ДОБАВЛЕНИЕ ЛЕКАРСТВА В ФАЙЛ ===";
+
+        // ОТКРЫВАЕМ ФАЙЛ В РЕЖИМЕ APPEND (добавление в конец)
+        medicinesFile.Close_file_o();
+        if (!medicinesFile.Open_file_out()) {
+            qDebug() << "Не удалось открыть medicines.txt для добавления";
+            return false;
+        }
+
         if (medicine) {
-            if (auto tablet = std::dynamic_pointer_cast<Tablet>(medicine)) {
-                Tablet tempTablet = *tablet;
-                std::ostringstream oss;
-                oss << tempTablet;
-                medicinesFile.Write_string_line(oss.str());
-            }
-            else if (auto syrup = std::dynamic_pointer_cast<Syrup>(medicine)) {
-                Syrup tempSyrup = *syrup;
-                std::ostringstream oss;
-                oss << tempSyrup;
-                medicinesFile.Write_string_line(oss.str());
-            }
-            else if (auto ointment = std::dynamic_pointer_cast<Ointment>(medicine)) {
-                Ointment tempOintment = *ointment;
-                std::ostringstream oss;
-                oss << tempOintment;
-                medicinesFile.Write_string_line(oss.str());
+            try {
+                if (auto tablet = std::dynamic_pointer_cast<Tablet>(medicine)) {
+                    // ПРАВИЛЬНЫЙ СПОСОБ: создаем строку и записываем ее
+                    Tablet tempTablet = *tablet;
+                    std::ostringstream oss;
+                    oss << "[TABLET];" << tempTablet;
+                    std::string line = oss.str();
+                    medicinesFile.Write_string_line(line);
+                    qDebug() << "✓ Добавлена таблетка:" << QString::fromStdString(tablet->getName());
+                    qDebug() << "  Данные:" << QString::fromStdString(line);
+                }
+                else if (auto syrup = std::dynamic_pointer_cast<Syrup>(medicine)) { // ИСПРАВЛЕНО: Syrup
+                    // ПРАВИЛЬНЫЙ СПОСОБ: создаем строку и записываем ее
+                    Syrup tempSyrup = *syrup;
+                    std::ostringstream oss;
+                    oss << "[SYRUP];" << tempSyrup;
+                    std::string line = oss.str();
+                    medicinesFile.Write_string_line(line);
+                    qDebug() << "✓ Добавлен сироп:" << QString::fromStdString(syrup->getName());
+                    qDebug() << "  Данные:" << QString::fromStdString(line);
+                }
+                else if (auto ointment = std::dynamic_pointer_cast<Ointment>(medicine)) {
+                    // ПРАВИЛЬНЫЙ СПОСОБ: создаем строку и записываем ее
+                    Ointment tempOintment = *ointment;
+                    std::ostringstream oss;
+                    oss << "[OINTMENT];" << tempOintment;
+                    std::string line = oss.str();
+                    medicinesFile.Write_string_line(line);
+                    qDebug() << "✓ Добавлена мазь:" << QString::fromStdString(ointment->getName());
+                    qDebug() << "  Данные:" << QString::fromStdString(line);
+                }
+            } catch (const std::exception& e) {
+                qDebug() << "✗ Ошибка добавления лекарства:" << e.what();
+                medicinesFile.Close_file_o();
+                return false;
             }
         }
+
+        medicinesFile.Flush();
+        medicinesFile.Close_file_o();
+        qDebug() << "=== ЛЕКАРСТВО УСПЕШНО ДОБАВЛЕНО ===";
         return true;
     } catch (const std::exception& e) {
+        qDebug() << "!!! ОБЩАЯ ОШИБКА ДОБАВЛЕНИЯ:" << e.what();
+        medicinesFile.Close_file_o();
         return false;
     }
 }

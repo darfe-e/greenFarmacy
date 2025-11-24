@@ -2,6 +2,7 @@
 #include "pharmacy.h"
 #include "inventoryoperation.h"
 #include "stockrecord.h"
+#include <iostream>
 
 template<class T>
 File_text<T>::File_text(const std::string& name) : File(name) {}
@@ -25,7 +26,16 @@ bool File_text<T>::Open_file_in()
 template<class T>
 bool File_text<T>::Open_file_out()
 {
-    file_o.open(file_name, std::ios::out);
+    // ИЗМЕНИТЬ: использовать append mode для добавления в конец
+    file_o.open(file_name, std::ios::out | std::ios::app);
+    return file_o.is_open();
+}
+
+template<class T>
+bool File_text<T>::Open_file_trunc()
+{
+    // НОВЫЙ МЕТОД: для полной перезаписи файла
+    file_o.open(file_name, std::ios::out | std::ios::trunc);
     return file_o.is_open();
 }
 
@@ -56,11 +66,9 @@ void File_text<T>::Write_string_line(const std::string& str)
     if (!file_o.is_open()) {
         throw std::runtime_error("File stream for writing is not open.");
     }
-    // Используем std::endl для записи строки и перехода на новую строку
     file_o << str << std::endl;
 }
 
-// НОВЫЙ МЕТОД: Чтение строки (для заголовка типа)
 template<class T>
 void File_text<T>::Read_string_line(std::string& str)
 {
@@ -68,18 +76,21 @@ void File_text<T>::Read_string_line(std::string& str)
         throw std::runtime_error("File stream for reading is not open.");
     }
 
-    // Проверяем, не достигнут ли EOF перед чтением
-    if (file_i.peek() == EOF) {
+    // ПРОВЕРЯЕМ КОНЕЦ ФАЙЛА ПЕРЕД ЧТЕНИЕМ
+    if (file_i.eof()) {
         throw std::runtime_error("End of file reached when trying to read string.");
     }
 
-    // Читаем всю строку
     std::getline(file_i, str);
+
+    // ЕСЛИ ПРОЧИТАЛИ ПУСТУЮ СТРОКУ И ДОСТИГЛИ КОНЦА - ЭТО КОНЕЦ ФАЙЛА
+    if (str.empty() && file_i.eof()) {
+        throw std::runtime_error("End of file reached");
+    }
 
     if (file_i.fail() && !file_i.eof()) {
         throw std::runtime_error("Failed to read string line from file.");
     }
-    // Если поток в состоянии eof после чтения, это нормально.
 }
 
 template<class T>
@@ -118,7 +129,6 @@ File_text<T>& File_text<T>::operator<<(const std::string& str)
     if (!file_o.is_open()) {
         throw std::runtime_error("File stream for writing is not open.");
     }
-    // Запись строки
     file_o << str;
     if (file_o.fail()) {
         throw std::runtime_error("Failed to write std::string to file.");
@@ -126,39 +136,18 @@ File_text<T>& File_text<T>::operator<<(const std::string& str)
     return *this;
 }
 
-
 template<class T>
 File_text<T>& File_text<T>::operator<<(const char* const str)
 {
     if (!file_o.is_open()) {
         throw std::runtime_error("File stream for writing is not open.");
     }
-    // Запись C-строки
     file_o << str;
     if (file_o.fail()) {
-        throw std::runtime_error("Failed to write C-string to file (e.g., newline).");
+        throw std::runtime_error("Failed to write C-string to file.");
     }
     return *this;
 }
-
-// template<class T>
-// File_text<T>& File_text<T>::operator>>(std::string& str)
-// {
-//     if (!file_i.is_open()) {
-//         throw std::runtime_error("File stream for reading is not open.");
-//     }
-
-//     file_i.clear(); // Сброс флагов перед чтением
-
-//     if (!(file_i >> str)) {
-//         if (file_i.eof()) {
-//             throw std::runtime_error("End of file reached when trying to read string.");
-//         }
-//         throw std::runtime_error("Failed to read string token from file.");
-//     }
-
-//     return *this;
-// }
 
 // Явное инстанцирование для всех используемых типов
 template class File_text<std::string>;

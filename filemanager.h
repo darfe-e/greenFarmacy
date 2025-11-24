@@ -44,6 +44,7 @@ public:
     bool loadMedicines(std::vector<std::shared_ptr<Medicine>>& medicines);
     bool saveMedicines(const std::vector<std::shared_ptr<Medicine>>& medicines);
     bool addMedicine(std::shared_ptr<Medicine> medicine);
+    bool truncateMedicinesFile();
 
     // Методы для работы с файлом pharmacies.txt
     bool loadPharmacies(std::vector<Pharmacy>& pharmacies);

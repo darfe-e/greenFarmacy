@@ -71,26 +71,29 @@ std::istream& operator>>(std::istream& is, Syrup& syrup)
 {
     try
     {
-        std::string line;
-        std::getline(is, line);
-
-        std::istringstream iss(line);
         std::vector<std::string> tokens;
         std::string token;
 
-        while (std::getline(iss, token, ';')) {
+        for (int i = 0; i < 13; ++i) { // 13 полей для Syrup
+            if (!std::getline(is, token, ';')) {
+                throw InvalidProductDataException("syrup data", "not enough fields");
+            }
             tokens.push_back(token);
         }
 
-        if (tokens.size() < 15) {
+        if (tokens.size() < 13) {
             throw InvalidProductDataException("syrup data", "invalid number of fields");
         }
 
         // Восстанавливаем базовую информацию Medicine
-        std::istringstream medicineStream(tokens[0] + ";" + tokens[1] + ";" + tokens[2] + ";" + tokens[3] + ";" + tokens[4] + ";" + tokens[5] + ";" + tokens[6] + ";" + tokens[7] + ";" + tokens[8] + ";" + tokens[9]);
+        std::istringstream medicineStream(
+            tokens[0] + ";" + tokens[1] + ";" + tokens[2] + ";" +
+            tokens[3] + ";" + tokens[4] + ";" + tokens[5] + ";" +
+            tokens[6] + ";" + tokens[7] + ";" + tokens[8] + ";" + tokens[9]
+            );
         medicineStream >> static_cast<Medicine&>(syrup);
 
-        // Volume (11-е поле)
+        // Volume (10-е поле в tokens)
         std::string volumeStr = tokens[10];
         size_t pos = volumeStr.find(" ml");
         if (pos != std::string::npos) {
@@ -102,17 +105,15 @@ std::istream& operator>>(std::istream& is, Syrup& syrup)
             throw InvalidProductDataException("Volume", "must be positive");
         }
 
-        // Contains Sugar (12-е поле)
+        // Contains Sugar (11-е поле в tokens)
         std::istringstream sugarStream(tokens[11]);
         syrup.hasSugar = SafeInput::readBoolean(sugarStream, "Contains sugar");
 
-        // Flavor (13-е поле)
+        // Flavor (12-е поле в tokens)
         syrup.flavor = tokens[12];
         if (syrup.flavor.empty()) {
             throw InvalidProductDataException("Flavor", "cannot be empty");
         }
-
-        // Dosage Form и Administration Method (14-е и 15-е поля) - только для вывода
 
     }
     catch (const std::invalid_argument&)

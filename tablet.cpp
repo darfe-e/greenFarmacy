@@ -76,30 +76,49 @@ std::istream& operator>>(std::istream& is, Tablet& tablet)
 {
     try
     {
-        std::string line;
-        std::getline(is, line);
+        // УБРАТЬ этот getline - строка уже прочитана в FileManager!
+        // std::string line;
+        // std::getline(is, line);
 
-        std::istringstream iss(line);
+        // std::istringstream iss(line);
+        // std::vector<std::string> tokens;
+        // std::string token;
+
+        // while (std::getline(iss, token, ';')) {
+        //     tokens.push_back(token);
+        // }
+
+        // ВМЕСТО ЭТОГО читаем прямо из потока is
         std::vector<std::string> tokens;
         std::string token;
 
-        while (std::getline(iss, token, ';')) {
+        // Пропускаем маркер [TABLET] который уже обработан в FileManager
+        // и читаем остальные поля напрямую из потока
+        for (int i = 0; i < 13; ++i) { // 13 полей для Tablet
+            if (!std::getline(is, token, ';')) {
+                throw InvalidProductDataException("tablet data", "not enough fields");
+            }
             tokens.push_back(token);
         }
 
-        if (tokens.size() < 15) {
+        if (tokens.size() < 13) {
             throw InvalidProductDataException("tablet data", "invalid number of fields");
         }
 
         // Восстанавливаем базовую информацию Medicine
-        std::istringstream medicineStream(tokens[0] + ";" + tokens[1] + ";" + tokens[2] + ";" + tokens[3] + ";" + tokens[4] + ";" + tokens[5] + ";" + tokens[6] + ";" + tokens[7] + ";" + tokens[8] + ";" + tokens[9]);
+        // tokens[0] - это первое поле после маркера [TABLET]
+        std::istringstream medicineStream(
+            tokens[0] + ";" + tokens[1] + ";" + tokens[2] + ";" +
+            tokens[3] + ";" + tokens[4] + ";" + tokens[5] + ";" +
+            tokens[6] + ";" + tokens[7] + ";" + tokens[8] + ";" + tokens[9]
+            );
         medicineStream >> static_cast<Medicine&>(tablet);
 
-        // Units per package (11-е поле)
+        // Units per package (10-е поле в tokens)
         std::istringstream unitsStream(tokens[10]);
         tablet.unitsPerPackage = SafeInput::readPositiveInt(unitsStream, "Units per package");
 
-        // Dosage (12-е поле)
+        // Dosage (11-е поле в tokens)
         std::string dosageStr = tokens[11];
         size_t pos = dosageStr.find(" mg");
         if (pos != std::string::npos) {
@@ -111,13 +130,11 @@ std::istream& operator>>(std::istream& is, Tablet& tablet)
             throw InvalidProductDataException("Dosage", "must be positive");
         }
 
-        // Coating (13-е поле)
+        // Coating (12-е поле в tokens)
         tablet.coating = tokens[12];
         if (tablet.coating.empty()) {
             throw InvalidProductDataException("Coating", "cannot be empty");
         }
-
-        // Dosage Form и Administration Method (14-е и 15-е поля) - только для вывода
 
     }
     catch (const std::invalid_argument&)

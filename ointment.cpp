@@ -71,26 +71,29 @@ std::istream& operator>>(std::istream& is, Ointment& ointment)
 {
     try
     {
-        std::string line;
-        std::getline(is, line);
-
-        std::istringstream iss(line);
         std::vector<std::string> tokens;
         std::string token;
 
-        while (std::getline(iss, token, ';')) {
+        for (int i = 0; i < 12; ++i) { // 12 полей для Ointment
+            if (!std::getline(is, token, ';')) {
+                throw InvalidProductDataException("ointment data", "not enough fields");
+            }
             tokens.push_back(token);
         }
 
-        if (tokens.size() < 14) {
+        if (tokens.size() < 12) {
             throw InvalidProductDataException("ointment data", "invalid number of fields");
         }
 
         // Восстанавливаем базовую информацию Medicine
-        std::istringstream medicineStream(tokens[0] + ";" + tokens[1] + ";" + tokens[2] + ";" + tokens[3] + ";" + tokens[4] + ";" + tokens[5] + ";" + tokens[6] + ";" + tokens[7] + ";" + tokens[8] + ";" + tokens[9]);
+        std::istringstream medicineStream(
+            tokens[0] + ";" + tokens[1] + ";" + tokens[2] + ";" +
+            tokens[3] + ";" + tokens[4] + ";" + tokens[5] + ";" +
+            tokens[6] + ";" + tokens[7] + ";" + tokens[8] + ";" + tokens[9]
+            );
         medicineStream >> static_cast<Medicine&>(ointment);
 
-        // Weight (11-е поле)
+        // Weight (10-е поле в tokens)
         std::string weightStr = tokens[10];
         size_t pos = weightStr.find(" g");
         if (pos != std::string::npos) {
@@ -102,13 +105,11 @@ std::istream& operator>>(std::istream& is, Ointment& ointment)
             throw InvalidProductDataException("weight", "must be positive");
         }
 
-        // Base type (12-е поле)
+        // Base type (11-е поле в tokens)
         ointment.baseType = tokens[11];
         if (ointment.baseType.empty()) {
             throw InvalidProductDataException("Base type", "cannot be empty");
         }
-
-        // Dosage Form и Administration Method (13-е и 14-е поля) - только для вывода
 
     }
     catch (const std::invalid_argument&)

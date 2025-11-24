@@ -10,6 +10,8 @@
 #include "tablet.h"
 #include "ointment.h"
 #include "syrup.h"
+#include "filemanager.h"
+#include <QCloseEvent>
 
 QT_BEGIN_NAMESPACE
 class QListWidget;
@@ -59,11 +61,11 @@ private:
     void updateCompleter();
     void pushToUndoStack();
     void performSearch(const QString &searchText);
-    void fillDialogWithProductData(AddProductDialog *dialog, const QString& productId, const QString& productName);
     void saveProductChanges(const QString& productId);
     void setupConnections();
-    void loadSampleData();
+    void loadAllData();
     QString formatProductDetails(std::shared_ptr<MedicalProduct> product);
+    void closeEvent(QCloseEvent *event);
 
     // UI Components
     QLineEdit *searchEdit;
