@@ -17,6 +17,8 @@ Tablet::Tablet(std::string id, std::string name, double basePrice,
     qDebug() << "Создание Tablet:" << QString::fromStdString(id)
              << "coating:" << QString::fromStdString(coating);
 
+    SafeInput::validateTextField(coating, "Coating");
+
     if (unitsPerPackage <= 0)
     {
         throw InvalidProductDataException("Units per package", "must be positive");

@@ -15,6 +15,8 @@ Ointment::Ointment(std::string id, std::string name, double basePrice,
     , weightG(weight)
     , baseType(base)
 {
+     SafeInput::validateTextField(baseType, "Base type");
+
     if (weightG <= 0)
     {
         throw std::invalid_argument("Weight must be positive: " + std::to_string(weightG));

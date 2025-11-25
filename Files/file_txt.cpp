@@ -3,6 +3,11 @@
 #include "inventoryoperation.h"
 #include "stockrecord.h"
 #include <iostream>
+#include <typeinfo>
+#include "Exception/FileExceptions/FileWriteException.h"
+#include "Exception/FileExceptions/FileNotFoundException.h"
+#include "Exception/FileExceptions/FileParseException.h"
+#include "Exception/FileExceptions/SerializationException.h"
 
 template<class T>
 File_text<T>::File_text(const std::string& name) : File(name) {}
@@ -64,7 +69,7 @@ template<class T>
 void File_text<T>::Write_string_line(const std::string& str)
 {
     if (!file_o.is_open()) {
-        throw std::runtime_error("File stream for writing is not open.");
+        throw FileWriteException ("File stream for writing is not open.");
     }
     file_o << str << std::endl;
 }
@@ -72,25 +77,21 @@ void File_text<T>::Write_string_line(const std::string& str)
 template<class T>
 void File_text<T>::Read_string_line(std::string& str)
 {
-    if (!file_i.is_open()) {
-        throw std::runtime_error("File stream for reading is not open.");
-    }
+    if (!file_i.is_open())
+        throw FileParseException ("File stream for reading is not open.");
 
     // ПРОВЕРЯЕМ КОНЕЦ ФАЙЛА ПЕРЕД ЧТЕНИЕМ
-    if (file_i.eof()) {
-        throw std::runtime_error("End of file reached when trying to read string.");
-    }
+    if (file_i.eof())
+        throw FileParseException("End of file reached when trying to read string.");
 
     std::getline(file_i, str);
 
     // ЕСЛИ ПРОЧИТАЛИ ПУСТУЮ СТРОКУ И ДОСТИГЛИ КОНЦА - ЭТО КОНЕЦ ФАЙЛА
-    if (str.empty() && file_i.eof()) {
-        throw std::runtime_error("End of file reached");
-    }
+    if (str.empty() && file_i.eof())
+        throw FileParseException("End of file reached");
 
-    if (file_i.fail() && !file_i.eof()) {
-        throw std::runtime_error("Failed to read string line from file.");
-    }
+    if (file_i.fail() && !file_i.eof())
+        throw FileParseException("Failed to read string line from file.");
 }
 
 template<class T>
@@ -104,9 +105,8 @@ template<class T>
 void File_text<T>::Read_record_in_file_text(T& OBJECT)
 {
     file_i >> OBJECT;
-    if (file_i.fail() && file_i.eof()) {
-        throw std::runtime_error("End of file reached");
-    }
+    if (file_i.fail() && file_i.eof())
+        throw SerializationException (typeid(OBJECT).name(), "End of file reached");
 }
 
 template<class T>
@@ -126,13 +126,11 @@ File_text<T>& File_text<T>::operator>>(T& obj)
 template<class T>
 File_text<T>& File_text<T>::operator<<(const std::string& str)
 {
-    if (!file_o.is_open()) {
-        throw std::runtime_error("File stream for writing is not open.");
-    }
+    if (!file_o.is_open())
+        throw FileWriteException("File stream for writing is not open.");
     file_o << str;
-    if (file_o.fail()) {
-        throw std::runtime_error("Failed to write std::string to file.");
-    }
+    if (file_o.fail())
+        throw FileWriteException("Failed to write std::string to file.");
     return *this;
 }
 
@@ -140,11 +138,11 @@ template<class T>
 File_text<T>& File_text<T>::operator<<(const char* const str)
 {
     if (!file_o.is_open()) {
-        throw std::runtime_error("File stream for writing is not open.");
+        throw FileWriteException("File stream for writing is not open.");
     }
     file_o << str;
     if (file_o.fail()) {
-        throw std::runtime_error("Failed to write C-string to file.");
+        throw FileWriteException("Failed to write C-string to file.");
     }
     return *this;
 }

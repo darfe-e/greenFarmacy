@@ -50,6 +50,8 @@ private slots:
     void onCancelEdit();
     void onUndo();
     void onItemSelected();
+    void onAddAnalogue();
+    void showProductDetailsInDialog(const QString& productId, QTextEdit* textEdit);
 
 private:
     void setupUI();
@@ -66,6 +68,7 @@ private:
     void loadAllData();
     QString formatProductDetails(std::shared_ptr<MedicalProduct> product);
     void closeEvent(QCloseEvent *event);
+    std::shared_ptr<MedicalProduct> currentProduct;
 
     // UI Components
     QLineEdit *searchEdit;
@@ -93,7 +96,8 @@ private:
     QWidget *editPanel;
     QPushButton *editBtn;
     QPushButton *deleteBtn;
-    QPushButton *cancelEditBtn;
+    QPushButton *addAnalogueBtn;
+    QPushButton *viewAnaloguesBtn;
 
     QStack<QString> undoStack;
     QString currentFilter;

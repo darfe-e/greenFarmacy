@@ -30,6 +30,7 @@ private:
     File_text<Pharmacy> pharmaciesFile;
     File_text<InventoryOperation> inventoryOperationsFile;
     File_text<StockRecord> stockFile;
+    File_text<std::string> analoguesFile;
 
     FileManager();
 
@@ -63,8 +64,12 @@ public:
     bool saveInventoryOperations(const std::vector<std::shared_ptr<InventoryOperation>>& operations);
     bool addInventoryOperation(std::shared_ptr<InventoryOperation> operation);
 
-    // Закрытие всех файлов
-    void closeAllFiles();
+
+    bool loadAnalogues(std::vector<std::shared_ptr<Medicine>>& medicines);
+    bool saveAnalogues(const std::vector<std::shared_ptr<Medicine>>& medicines);
+    bool addAnalogue(const std::string& medicineId, const std::string& analogueId);
+    bool removeAnalogue(const std::string& medicineId, const std::string& analogueId);
+    std::vector<std::string> getMedicineAnalogues(const std::string& medicineId);
 };
 
 #endif // FILEMANAGER_H

@@ -126,6 +126,8 @@ AddProductDialog::AddProductDialog(QWidget *parent)
     , specificGroup(nullptr)
 {
     setupUI();
+    QString currentType = typeComboBox ? typeComboBox->currentText() : "Таблетки";
+    showSpecificFields(currentType);
 }
 
 void AddProductDialog::setEditMode(bool editMode)
@@ -142,50 +144,50 @@ void AddProductDialog::setEditMode(bool editMode)
     }
 }
 
-void AddProductDialog::setProductData(const QString& id, const QString& name, double price,
-                                      const QString& type, const QDate& expiryDate,
-                                      const QString& country, bool prescription,
-                                      const QString& substance, const QString& instructions,
-                                      // Добавляем параметры для специфичных полей
-                                      int tabletUnits, double tabletDosage, const QString& tabletCoating,
-                                      double syrupVolume, bool syrupHasSugar, const QString& syrupFlavor,
-                                      double ointmentWeight, const QString& ointmentBase)
-{
-    // Основные поля
-    if (idEdit) idEdit->setText(id);
-    if (nameEdit) nameEdit->setText(name);
-    if (priceEdit) priceEdit->setValue(price);
+// void AddProductDialog::setProductData(const QString& id, const QString& name, double price,
+//                                       const QString& type, const QDate& expiryDate,
+//                                       const QString& country, bool prescription,
+//                                       const QString& substance, const QString& instructions,
+//                                       // Добавляем параметры для специфичных полей
+//                                       int tabletUnits, double tabletDosage, const QString& tabletCoating,
+//                                       double syrupVolume, bool syrupHasSugar, const QString& syrupFlavor,
+//                                       double ointmentWeight, const QString& ointmentBase)
+// {
+//     // Основные поля
+//     if (idEdit) idEdit->setText(id);
+//     if (nameEdit) nameEdit->setText(name);
+//     if (priceEdit) priceEdit->setValue(price);
 
-    if (typeComboBox) {
-        int index = typeComboBox->findText(type);
-        if (index != -1) {
-            typeComboBox->setCurrentIndex(index);
-            showSpecificFields(type);
-        }
-    }
+//     if (typeComboBox) {
+//         int index = typeComboBox->findText(type);
+//         if (index != -1) {
+//             typeComboBox->setCurrentIndex(index);
+//             showSpecificFields(type);
+//         }
+//     }
 
-    if (expiryDateEdit) expiryDateEdit->setDate(expiryDate);
-    if (countryEdit) countryEdit->setText(country);
-    if (prescriptionCheck) prescriptionCheck->setChecked(prescription);
-    if (substanceEdit) substanceEdit->setText(substance);
-    if (instructionsEdit) instructionsEdit->setPlainText(instructions);
+//     if (expiryDateEdit) expiryDateEdit->setDate(expiryDate);
+//     if (countryEdit) countryEdit->setText(country);
+//     if (prescriptionCheck) prescriptionCheck->setChecked(prescription);
+//     if (substanceEdit) substanceEdit->setText(substance);
+//     if (instructionsEdit) instructionsEdit->setPlainText(instructions);
 
-    // Заполняем специфичные поля в зависимости от типа
-    if (type == "Таблетки") {
-        if (tabletUnitsEdit) tabletUnitsEdit->setValue(tabletUnits);
-        if (tabletDosageEdit) tabletDosageEdit->setValue(tabletDosage);
-        if (tabletCoatingEdit) tabletCoatingEdit->setText(tabletCoating);
-    }
-    else if (type == "Сироп") {
-        if (syrupVolumeEdit) syrupVolumeEdit->setValue(syrupVolume);
-        if (syrupSugarCheck) syrupSugarCheck->setChecked(syrupHasSugar);
-        if (syrupFlavorEdit) syrupFlavorEdit->setText(syrupFlavor);
-    }
-    else if (type == "Мазь") {
-        if (ointmentWeightEdit) ointmentWeightEdit->setValue(ointmentWeight);
-        if (ointmentBaseEdit) ointmentBaseEdit->setText(ointmentBase);
-    }
-}
+//     // Заполняем специфичные поля в зависимости от типа
+//     if (type == "Таблетки") {
+//         if (tabletUnitsEdit) tabletUnitsEdit->setValue(tabletUnits);
+//         if (tabletDosageEdit) tabletDosageEdit->setValue(tabletDosage);
+//         if (tabletCoatingEdit) tabletCoatingEdit->setText(tabletCoating);
+//     }
+//     else if (type == "Сироп") {
+//         if (syrupVolumeEdit) syrupVolumeEdit->setValue(syrupVolume);
+//         if (syrupSugarCheck) syrupSugarCheck->setChecked(syrupHasSugar);
+//         if (syrupFlavorEdit) syrupFlavorEdit->setText(syrupFlavor);
+//     }
+//     else if (type == "Мазь") {
+//         if (ointmentWeightEdit) ointmentWeightEdit->setValue(ointmentWeight);
+//         if (ointmentBaseEdit) ointmentBaseEdit->setText(ointmentBase);
+//     }
+// }
 
 void AddProductDialog::setupUI()
 {
@@ -419,4 +421,99 @@ void AddProductDialog::onAddProduct()
 void AddProductDialog::onCancel()
 {
     reject();
+}
+
+// Основной метод со всеми параметрами
+void AddProductDialog::setProductData(const QString& id, const QString& name, double price,
+                                      const QString& type, const QDate& expiryDate,
+                                      const QString& country, bool prescription,
+                                      const QString& substance, const QString& instructions,
+                                      int tabletUnits, double tabletDosage, const QString& tabletCoating,
+                                      double syrupVolume, bool syrupHasSugar, const QString& syrupFlavor,
+                                      double ointmentWeight, const QString& ointmentBase)
+{
+    // Основные поля
+    if (idEdit) idEdit->setText(id);
+    if (nameEdit) nameEdit->setText(name);
+    if (priceEdit) priceEdit->setValue(price);
+
+    if (typeComboBox) {
+        int index = typeComboBox->findText(type);
+        if (index != -1) {
+            typeComboBox->setCurrentIndex(index);
+            // ВАЖНО: показываем специфичные поля ДО заполнения данных
+            showSpecificFields(type);
+        }
+    }
+
+    if (expiryDateEdit) expiryDateEdit->setDate(expiryDate);
+    if (countryEdit) countryEdit->setText(country);
+    if (prescriptionCheck) prescriptionCheck->setChecked(prescription);
+    if (substanceEdit) substanceEdit->setText(substance);
+    if (instructionsEdit) instructionsEdit->setPlainText(instructions);
+
+    // Заполняем ВСЕ специфичные поля (они будут скрыты/показаны автоматически)
+    if (tabletUnitsEdit) tabletUnitsEdit->setValue(tabletUnits);
+    if (tabletDosageEdit) tabletDosageEdit->setValue(tabletDosage);
+    if (tabletCoatingEdit) tabletCoatingEdit->setText(tabletCoating);
+    if (syrupVolumeEdit) syrupVolumeEdit->setValue(syrupVolume);
+    if (syrupSugarCheck) syrupSugarCheck->setChecked(syrupHasSugar);
+    if (syrupFlavorEdit) syrupFlavorEdit->setText(syrupFlavor);
+    if (ointmentWeightEdit) ointmentWeightEdit->setValue(ointmentWeight);
+    if (ointmentBaseEdit) ointmentBaseEdit->setText(ointmentBase);
+}
+
+// Метод только для основных полей
+void AddProductDialog::setProductData(const QString& id, const QString& name, double price,
+                                      const QString& type, const QDate& expiryDate,
+                                      const QString& country, bool prescription,
+                                      const QString& substance, const QString& instructions)
+{
+    setProductData(id, name, price, type, expiryDate, country, prescription,
+                   substance, instructions,
+                   0, 0.0, "",    // tablet parameters
+                   0.0, false, "", // syrup parameters
+                   0.0, "");      // ointment parameters
+}
+
+// Метод для таблеток
+void AddProductDialog::setProductData(const QString& id, const QString& name, double price,
+                                      const QString& type, const QDate& expiryDate,
+                                      const QString& country, bool prescription,
+                                      const QString& substance, const QString& instructions,
+                                      int tabletUnits, double tabletDosage, const QString& tabletCoating)
+{
+    setProductData(id, name, price, type, expiryDate, country, prescription,
+                   substance, instructions,
+                   tabletUnits, tabletDosage, tabletCoating,
+                   0.0, false, "",  // syrup parameters
+                   0.0, "");        // ointment parameters
+}
+
+// Метод для сиропа
+void AddProductDialog::setProductData(const QString& id, const QString& name, double price,
+                                      const QString& type, const QDate& expiryDate,
+                                      const QString& country, bool prescription,
+                                      const QString& substance, const QString& instructions,
+                                      double syrupVolume, bool syrupHasSugar, const QString& syrupFlavor)
+{
+    setProductData(id, name, price, type, expiryDate, country, prescription,
+                   substance, instructions,
+                   0, 0.0, "",    // tablet parameters
+                   syrupVolume, syrupHasSugar, syrupFlavor,
+                   0.0, "");      // ointment parameters
+}
+
+// Метод для мази
+void AddProductDialog::setProductData(const QString& id, const QString& name, double price,
+                                      const QString& type, const QDate& expiryDate,
+                                      const QString& country, bool prescription,
+                                      const QString& substance, const QString& instructions,
+                                      double ointmentWeight, const QString& ointmentBase)
+{
+    setProductData(id, name, price, type, expiryDate, country, prescription,
+                   substance, instructions,
+                   0, 0.0, "",    // tablet parameters
+                   0.0, false, "", // syrup parameters
+                   ointmentWeight, ointmentBase);
 }

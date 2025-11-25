@@ -18,6 +18,16 @@ Medicine::Medicine(std::string id, std::string name, double basePrice,
         throw std::invalid_argument("Active substance cannot be empty");
     if (instructions.empty())
         throw std::invalid_argument("Instructions cannot be empty");
+
+    SafeInput::validateProductId(getId());
+    SafeInput::validateTextField(getName(), "Name");
+    SafeInput::validateTextField(getManufacturerCountry(), "Country");
+    SafeInput::validateTextField(activeSubstance, "Active substance");
+    SafeInput::validateTextField(instructions, "Instructions");
+
+    if (basePrice <= 0) {
+        throw InvalidProductDataException("Price", "must be positive");
+    }
 }
 
 // Конструктор по умолчанию
@@ -202,4 +212,36 @@ std::istream& operator>>(std::istream& is, Medicine& med)
     }
 
     return is;
+}
+
+void Medicine::addAnalogueById(const std::string& analogueId,
+                     const std::vector<std::shared_ptr<Medicine>>& allMedicines)
+{
+    if (analogueId == this->getId())
+        throw std::invalid_argument("Medicine cannot be analogue of itself");
+
+    auto it = std::find_if(allMedicines.begin(), allMedicines.end(),
+                           [&analogueId](const std::shared_ptr<Medicine>& med) {
+                               return med->getId() == analogueId;
+                           });
+
+    if (it != allMedicines.end())
+        addAnalogue(*it);
+    else
+        throw std::runtime_error("Medicine with ID " + analogueId + " not found");
+}
+
+// Получение ID аналогов
+std::vector<std::string> Medicine::getAnalogueIds() const
+{
+    std::vector<std::string> ids;
+    for (const auto& analogue : analogues)
+        ids.push_back(analogue->getId());
+    return ids;
+}
+
+// Очистка аналогов
+void Medicine::clearAnalogues()
+{
+    analogues.clear();
 }

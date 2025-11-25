@@ -13,6 +13,9 @@ Syrup::Syrup(std::string id, std::string name, double basePrice,
     , hasSugar(sugar)
     , flavor(flavor)
 {
+
+     SafeInput::validateTextField(flavor, "Flavor");
+
     if (volumeMl <= 0)
     {
         throw InvalidProductDataException("Volume", "must be positive");

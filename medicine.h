@@ -32,6 +32,10 @@ public:
     void addAnalogue(std::shared_ptr<Medicine> analogue);
     void removeAnalogue(const std::string& analogueId);
     const std::vector<std::shared_ptr<Medicine>>& getAnalogues() const;
+    void addAnalogueById(const std::string& analogueId,
+                         const std::vector<std::shared_ptr<Medicine>>& allMedicines);
+    std::vector<std::string> getAnalogueIds() const;
+    void clearAnalogues();
 
     // Поиск аналогов
     std::vector<std::shared_ptr<Medicine>> findAnaloguesBySubstance(const std::string& substance) const;

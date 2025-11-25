@@ -3,7 +3,14 @@
 #include <stdexcept>
 #include <memory>
 #include <map>
-#include "QDebug"
+#include <QDebug>
+#include "Exception/FileExceptions/FileWriteException.h"
+#include "Exception/FileExceptions/FileNotFoundException.h"
+#include "Exception/FileExceptions/FileParseException.h"
+#include "Exception/FileExceptions/SerializationException.h"
+#include "Exception/PharmacyExceptions/InvalidProductDataException.h"
+#include "Exception/safeinput.h"
+
 
 FileManager* FileManager::instance = nullptr;
 
@@ -12,323 +19,366 @@ FileManager::FileManager()
     , pharmaciesFile("pharmacies.txt")
     , inventoryOperationsFile("inventory_operations.txt")
     , stockFile("stock.txt")
+    , analoguesFile("analogues.txt")  // ДОБАВЛЯЕМ
 {
 }
 
-FileManager& FileManager::getInstance() {
-    if (instance == nullptr) {
+FileManager& FileManager::getInstance()
+{
+    if (instance == nullptr) 
         instance = new FileManager();
-    }
     return *instance;
 }
 
-bool FileManager::truncateMedicinesFile() {
-    try {
-        if (!medicinesFile.Open_file_trunc()) {
-            qDebug() << "Не удалось открыть medicines.txt для очистки";
-            return false;
-        }
-        qDebug() << "Файл medicines.txt очищен";
+bool FileManager::truncateMedicinesFile()
+{
+    try
+    {
+        if (!medicinesFile.Open_file_trunc())
+            throw FileWriteException("Failed to truncate medicines file");
         return true;
-    } catch (const std::exception& e) {
-        qDebug() << "Ошибка при очистке файла medicines.txt:" << e.what();
+    }
+    catch (const FileWriteException& e)
+    {
+        return false;
+    }
+    catch (const std::exception& e)
+    {
         return false;
     }
 }
 
-// Методы для работы с файлом medicines.txt
-bool FileManager::loadMedicines(std::vector<std::shared_ptr<Medicine>>& medicines) {
-    try {
-        qDebug() << "=== ЗАГРУЗКА ЛЕКАРСТВ ИЗ ФАЙЛА ===";
-
-        // ЗАКРЫВАЕМ ФАЙЛ ПЕРЕД ОТКРЫТИЕМ ДЛЯ ЧТЕНИЯ
+bool FileManager::loadMedicines(std::vector<std::shared_ptr<Medicine>>& medicines)
+{
+    try
+    {
         medicinesFile.Close_file_in();
 
-        if (!medicinesFile.Open_file_in()) {
-            qDebug() << "Файл medicines.txt не существует или не может быть открыт";
-            return false;
-        }
+        if (!medicinesFile.Open_file_in())
+            throw FileNotFoundException("medicines.txt");
 
         medicines.clear();
         std::string line;
-        int lineNumber = 0;
-        int loadedCount = 0;
 
-        // ИСПРАВЛЕННАЯ ЛОГИКА ЧТЕНИЯ
-        while (true) {
-            try {
+        while (true)
+        {
+            try
+            {
                 medicinesFile.Read_string_line(line);
-                lineNumber++;
-                qDebug() << "Строка" << lineNumber << ":" << QString::fromStdString(line);
+
 
                 // Обработка строки
-                if (line.find("[TABLET];") == 0) {
+                if (line.find("[TABLET];") == 0)
+                {
                     Tablet tablet;
                     std::string remainingLine = line.substr(9);
                     std::istringstream tabletStream(remainingLine);
                     tabletStream >> tablet;
-                    if (!tabletStream.fail()) {
+                    if (!tabletStream.fail())
                         medicines.push_back(std::make_shared<Tablet>(tablet));
-                        loadedCount++;
-                        qDebug() << "✓ Загружена таблетка:" << QString::fromStdString(tablet.getName());
-                    } else {
-                        qDebug() << "✗ Ошибка парсинга таблетки";
-                    }
+                    else
+                        throw FileParseException("Failed to parse tablet data");
                 }
-                else if (line.find("[SYRUP];") == 0) {
+                else if (line.find("[SYRUP];") == 0)
+                {
                     Syrup syrup;
                     std::string remainingLine = line.substr(8);
                     std::istringstream syrupStream(remainingLine);
                     syrupStream >> syrup;
-                    if (!syrupStream.fail()) {
+                    if (!syrupStream.fail())
                         medicines.push_back(std::make_shared<Syrup>(syrup));
-                        loadedCount++;
-                        qDebug() << "✓ Загружен сироп:" << QString::fromStdString(syrup.getName());
-                    } else {
-                        qDebug() << "✗ Ошибка парсинга сиропа";
-                    }
+                    else
+                        throw FileParseException("Failed to parse syrup data");
                 }
-                else if (line.find("[OINTMENT];") == 0) {
+                else if (line.find("[OINTMENT];") == 0)
+                {
                     Ointment ointment;
                     std::string remainingLine = line.substr(11);
                     std::istringstream ointmentStream(remainingLine);
                     ointmentStream >> ointment;
-                    if (!ointmentStream.fail()) {
+                    if (!ointmentStream.fail())
+                    {
                         medicines.push_back(std::make_shared<Ointment>(ointment));
-                        loadedCount++;
-                        qDebug() << "✓ Загружена мазь:" << QString::fromStdString(ointment.getName());
-                    } else {
-                        qDebug() << "✗ Ошибка парсинга мази";
                     }
-                } else {
-                    qDebug() << "✗ Неизвестный тип в строке:" << lineNumber;
+                    else
+                        throw FileParseException("Failed to parse ointment data");
                 }
+                else
+                    throw FileParseException("Unknown medicine type marker");
+
             }
-            catch (const std::runtime_error& e) {
+            catch (const FileParseException& e)
+            {
                 // Ловим исключение конца файла и выходим из цикла
-                if (std::string(e.what()).find("End of file") != std::string::npos) {
-                    qDebug() << "Достигнут конец файла";
+                if (std::string(e.what()).find("End of file") != std::string::npos)
                     break;
-                } else {
-                    // Другие ошибки - логируем и продолжаем
-                    qDebug() << "Ошибка чтения строки" << lineNumber << ":" << e.what();
-                }
+                else
+                    continue;
+            }
+            catch (const SerializationException& e)
+            {
+                continue;
             }
         }
 
         medicinesFile.Close_file_in();
-        qDebug() << "=== ЗАГРУЗКА ЗАВЕРШЕНА: " << loadedCount << "лекарств ===";
+        if (!loadAnalogues(medicines))
+            qDebug() << "Предупреждение: не удалось загрузить аналоги";
         return true;
-    } catch (const std::exception& e) {
-        qDebug() << "!!! ОБЩАЯ ОШИБКА ЗАГРУЗКИ:" << e.what();
+    }
+    catch (const FileNotFoundException& e)
+    {
+        medicinesFile.Close_file_in();
+        return false;
+    }
+    catch (const FileParseException& e)
+    {
+        medicinesFile.Close_file_in();
+        return false;
+    }
+    catch (const std::exception& e)
+    {
         medicinesFile.Close_file_in();
         return false;
     }
 }
 
-bool FileManager::saveMedicines(const std::vector<std::shared_ptr<Medicine>>& medicines) {
+bool FileManager::saveMedicines(const std::vector<std::shared_ptr<Medicine>>& medicines)
+{
     try {
-        qDebug() << "=== СОХРАНЕНИЕ" << medicines.size() << "ЛЕКАРСТВ В ФАЙЛ ===";
-
-        // Закрываем файл перед открытием в новом режиме
         medicinesFile.Close_file_o();
 
-        if (!medicinesFile.Open_file_trunc()) {  // Используем trunc для полной перезаписи
-            qDebug() << "Не удалось открыть medicines.txt для записи";
-            return false;
-        }
+        if (!medicinesFile.Open_file_trunc())
+            throw FileWriteException("Failed to open medicines.txt for writing");
 
-        int savedCount = 0;
-        for (const auto& med : medicines) {
+        for (const auto& med : medicines)
+        {
             if (med) {
                 try {
-                    if (auto tablet = std::dynamic_pointer_cast<Tablet>(med)) {
+                    if (auto tablet = std::dynamic_pointer_cast<Tablet>(med))
+                    {
                         Tablet tempTablet = *tablet;
                         std::ostringstream oss;
                         oss << tempTablet;
                         std::string line = oss.str();
                         medicinesFile.Write_string_line(line);
-                        savedCount++;
-                        qDebug() << "✓ Сохранена таблетка:" << QString::fromStdString(tablet->getName());
                     }
-                    else if (auto syrup = std::dynamic_pointer_cast<Syrup>(med)) {
+                    else if (auto syrup = std::dynamic_pointer_cast<Syrup>(med))
+                    {
                         Syrup tempSyrup = *syrup;
                         std::ostringstream oss;
                         oss << tempSyrup;
                         std::string line = oss.str();
                         medicinesFile.Write_string_line(line);
-                        savedCount++;
-                        qDebug() << "✓ Сохранен сироп:" << QString::fromStdString(syrup->getName());
                     }
-                    else if (auto ointment = std::dynamic_pointer_cast<Ointment>(med)) {
+                    else if (auto ointment = std::dynamic_pointer_cast<Ointment>(med))
+                    {
                         Ointment tempOintment = *ointment;
                         std::ostringstream oss;
                         oss << tempOintment;
                         std::string line = oss.str();
                         medicinesFile.Write_string_line(line);
-                        savedCount++;
-                        qDebug() << "✓ Сохранена мазь:" << QString::fromStdString(ointment->getName());
                     }
-                } catch (const std::exception& e) {
-                    qDebug() << "✗ Ошибка сохранения лекарства:" << e.what();
                 }
-            }
-        }
-
-        medicinesFile.Flush();  // Сбрасываем буфер
-        medicinesFile.Close_file_o();  // Закрываем файл
-
-        qDebug() << "=== СОХРАНЕНИЕ ЗАВЕРШЕНО: " << savedCount << "лекарств ===";
-        return true;
-    } catch (const std::exception& e) {
-        qDebug() << "!!! ОБЩАЯ ОШИБКА СОХРАНЕНИЯ:" << e.what();
-        return false;
-    }
-}
-
-bool FileManager::addMedicine(std::shared_ptr<Medicine> medicine) {
-    try {
-        qDebug() << "=== ДОБАВЛЕНИЕ ЛЕКАРСТВА В ФАЙЛ ===";
-
-        // ОТКРЫВАЕМ ФАЙЛ В РЕЖИМЕ APPEND (добавление в конец)
-        medicinesFile.Close_file_o();
-        if (!medicinesFile.Open_file_out()) {
-            qDebug() << "Не удалось открыть medicines.txt для добавления";
-            return false;
-        }
-
-        if (medicine) {
-            try {
-                if (auto tablet = std::dynamic_pointer_cast<Tablet>(medicine)) {
-                    // ПРАВИЛЬНЫЙ СПОСОБ: создаем строку и записываем ее
-                    Tablet tempTablet = *tablet;
-                    std::ostringstream oss;
-                    oss << "[TABLET];" << tempTablet;
-                    std::string line = oss.str();
-                    medicinesFile.Write_string_line(line);
-                    qDebug() << "✓ Добавлена таблетка:" << QString::fromStdString(tablet->getName());
-                    qDebug() << "  Данные:" << QString::fromStdString(line);
+                catch (const FileWriteException& e)
+                {
+                    continue;
                 }
-                else if (auto syrup = std::dynamic_pointer_cast<Syrup>(medicine)) { // ИСПРАВЛЕНО: Syrup
-                    // ПРАВИЛЬНЫЙ СПОСОБ: создаем строку и записываем ее
-                    Syrup tempSyrup = *syrup;
-                    std::ostringstream oss;
-                    oss << "[SYRUP];" << tempSyrup;
-                    std::string line = oss.str();
-                    medicinesFile.Write_string_line(line);
-                    qDebug() << "✓ Добавлен сироп:" << QString::fromStdString(syrup->getName());
-                    qDebug() << "  Данные:" << QString::fromStdString(line);
+                catch (const std::exception& e)
+                {
+                    continue;
                 }
-                else if (auto ointment = std::dynamic_pointer_cast<Ointment>(medicine)) {
-                    // ПРАВИЛЬНЫЙ СПОСОБ: создаем строку и записываем ее
-                    Ointment tempOintment = *ointment;
-                    std::ostringstream oss;
-                    oss << "[OINTMENT];" << tempOintment;
-                    std::string line = oss.str();
-                    medicinesFile.Write_string_line(line);
-                    qDebug() << "✓ Добавлена мазь:" << QString::fromStdString(ointment->getName());
-                    qDebug() << "  Данные:" << QString::fromStdString(line);
-                }
-            } catch (const std::exception& e) {
-                qDebug() << "✗ Ошибка добавления лекарства:" << e.what();
-                medicinesFile.Close_file_o();
-                return false;
             }
         }
 
         medicinesFile.Flush();
         medicinesFile.Close_file_o();
-        qDebug() << "=== ЛЕКАРСТВО УСПЕШНО ДОБАВЛЕНО ===";
         return true;
-    } catch (const std::exception& e) {
-        qDebug() << "!!! ОБЩАЯ ОШИБКА ДОБАВЛЕНИЯ:" << e.what();
+    }
+    catch (const FileWriteException& e)
+    {
+        medicinesFile.Close_file_o();
+        return false;
+    }
+    catch (const std::exception& e)
+    {
         medicinesFile.Close_file_o();
         return false;
     }
 }
 
-// Методы для работы с файлом pharmacies.txt
-bool FileManager::loadPharmacies(std::vector<Pharmacy>& pharmacies) {
+bool FileManager::addMedicine(std::shared_ptr<Medicine> medicine)
+{
     try {
-        if (!pharmaciesFile.Open_file_in()) return false;
+        if (!medicine) return false;
 
-        pharmacies.clear();
-        Pharmacy pharmacy;
-        while (!pharmaciesFile.R_end_file()) {
-            pharmaciesFile.Read_record_in_file_text(pharmacy);
-            if (!pharmaciesFile.R_end_file()) {
-                pharmacies.push_back(pharmacy);
-            }
+        // Базовая валидация с использованием SafeInput
+        SafeInput::validateProductId(medicine->getId());
+        SafeInput::validateTextField(medicine->getName(), "Name");
+        SafeInput::validateTextField(medicine->getManufacturerCountry(), "Country");
+        SafeInput::validateTextField(medicine->getActiveSubstance(), "Active substance");
+
+        if (medicine->getBasePrice() <= 0) {
+            return false;
         }
+
+        medicinesFile.Close_file_o();
+        if (!medicinesFile.Open_file_out()) return false;
+
+        // Запись в файл
+        if (auto tablet = std::dynamic_pointer_cast<Tablet>(medicine)) {
+            std::ostringstream oss;
+            oss << *tablet;
+            medicinesFile.Write_string_line(oss.str());
+        }
+        else if (auto syrup = std::dynamic_pointer_cast<Syrup>(medicine)) {
+            std::ostringstream oss;
+            oss << *syrup;
+            medicinesFile.Write_string_line(oss.str());
+        }
+        else if (auto ointment = std::dynamic_pointer_cast<Ointment>(medicine)) {
+            std::ostringstream oss;
+            oss << *ointment;
+            medicinesFile.Write_string_line(oss.str());
+        }
+        else {
+            return false;
+        }
+
+        medicinesFile.Flush();
+        medicinesFile.Close_file_o();
         return true;
-    } catch (const std::exception& e) {
+
+    } catch (...) {
+        medicinesFile.Close_file_o();
         return false;
     }
 }
 
-bool FileManager::savePharmacies(const std::vector<Pharmacy>& pharmacies) {
-    try {
+bool FileManager::loadPharmacies(std::vector<Pharmacy>& pharmacies)
+{
+    try
+    {
+        pharmaciesFile.Close_file_in();
+
+        if (!pharmaciesFile.Open_file_in())
+            throw FileNotFoundException("pharmacies.txt");
+
+        pharmacies.clear();
+        Pharmacy pharmacy;
+
+        while (!pharmaciesFile.R_end_file())
+        {
+            try
+            {
+                pharmaciesFile.Read_record_in_file_text(pharmacy);
+                if (!pharmaciesFile.R_end_file())
+                    pharmacies.push_back(pharmacy);
+            }
+            catch (const SerializationException& e)
+            {
+                continue;
+            }
+            catch (const FileParseException& e)
+            {
+                if (std::string(e.what()).find("End of file") != std::string::npos)
+                    break;
+                continue;
+            }
+        }
+
+        pharmaciesFile.Close_file_in();
+        return true;
+    }
+    catch (const FileNotFoundException& e)
+    {
+        pharmaciesFile.Close_file_in();
+        return false;
+    }
+    catch (const std::exception& e)
+    {
+        pharmaciesFile.Close_file_in();
+        return false;
+    }
+}
+
+bool FileManager::savePharmacies(const std::vector<Pharmacy>& pharmacies)
+{
+    try
+    {
         if (!pharmaciesFile.Open_file_out()) return false;
 
-        for (const auto& pharmacy : pharmacies) {
+        for (const auto& pharmacy : pharmacies)
+        {
             Pharmacy nonConstPharmacy = pharmacy;
             pharmaciesFile.Write_record_in_file_text(nonConstPharmacy);
         }
         return true;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
         return false;
     }
 }
 
 // Методы для работы с файлом stock.txt (остатки товаров)
-bool FileManager::loadStockData(std::vector<Pharmacy>& pharmacies, const std::vector<std::shared_ptr<Medicine>>& medicines) {
-    try {
+bool FileManager::loadStockData(std::vector<Pharmacy>& pharmacies, const std::vector<std::shared_ptr<Medicine>>& medicines)
+{
+    try
+    {
         if (!stockFile.Open_file_in()) return false;
 
         // Создаем карту лекарств для быстрого поиска по ID
         std::map<std::string, std::shared_ptr<Medicine>> medicineMap;
-        for (const auto& med : medicines) {
-            if (med) {
+        for (const auto& med : medicines)
+        {
+            if (med) 
                 medicineMap[med->getId()] = med;
-            }
         }
 
         // Создаем карту аптек для быстрого поиска по ID
         std::map<std::string, Pharmacy*> pharmacyMap;
-        for (auto& pharmacy : pharmacies) {
+        for (auto& pharmacy : pharmacies) 
             pharmacyMap[pharmacy.getId()] = &pharmacy;
-        }
 
         StockRecord record;
-        while (!stockFile.R_end_file()) {
+        while (!stockFile.R_end_file())
+        {
             stockFile.Read_record_in_file_text(record);
-            if (!stockFile.R_end_file()) {
+            if (!stockFile.R_end_file())
+            {
                 // Находим аптеку и добавляем товар в ее склад
                 auto pharmacyIt = pharmacyMap.find(record.pharmacyId);
                 auto medicineIt = medicineMap.find(record.productId);
 
-                if (pharmacyIt != pharmacyMap.end() && medicineIt != medicineMap.end()) {
+                if (pharmacyIt != pharmacyMap.end() && medicineIt != medicineMap.end()) 
                     pharmacyIt->second->addToStorage(medicineIt->second, record.quantity);
-                }
             }
         }
         return true;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
         return false;
     }
 }
 
-bool FileManager::saveStockData(const std::vector<Pharmacy>& pharmacies) {
-    try {
+bool FileManager::saveStockData(const std::vector<Pharmacy>& pharmacies)
+{
+    try
+    {
         if (!stockFile.Open_file_out()) return false;
 
-        for (const auto& pharmacy : pharmacies) {
+        for (const auto& pharmacy : pharmacies)
+        {
             auto products = pharmacy.getAllProducts();
-            for (const auto& productPair : products) {
+            for (const auto& productPair : products)
+            {
                 const auto& product = productPair.first;
                 int quantity = productPair.second;
 
-                if (product && quantity > 0) {
+                if (product && quantity > 0)
+                {
                     // Получаем текущую дату
                     std::time_t t = std::time(nullptr);
                     std::tm* now = std::localtime(&t);
@@ -340,45 +390,53 @@ bool FileManager::saveStockData(const std::vector<Pharmacy>& pharmacies) {
             }
         }
         return true;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
         return false;
     }
 }
 
-std::map<std::string, int> FileManager::findProductInPharmacies(const std::string& productId) {
+std::map<std::string, int> FileManager::findProductInPharmacies(const std::string& productId)
+{
     std::map<std::string, int> result;
 
-    try {
+    try
+    {
         if (!stockFile.Open_file_in()) return result;
 
         StockRecord record;
-        while (!stockFile.R_end_file()) {
+        while (!stockFile.R_end_file())
+        {
             stockFile.Read_record_in_file_text(record);
-            if (!stockFile.R_end_file() && record.productId == productId && record.quantity > 0) {
+            if (!stockFile.R_end_file() && record.productId == productId && record.quantity > 0) 
                 result[record.pharmacyId] = record.quantity;
-            }
         }
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
         // Игнорируем ошибки при поиске
     }
 
     return result;
 }
 
-std::vector<std::string> FileManager::findPharmaciesWithProduct(const std::string& productId) {
+std::vector<std::string> FileManager::findPharmaciesWithProduct(const std::string& productId)
+{
     std::vector<std::string> result;
 
     auto pharmaciesWithProduct = findProductInPharmacies(productId);
-    for (const auto& pair : pharmaciesWithProduct) {
+    for (const auto& pair : pharmaciesWithProduct) 
         result.push_back(pair.first);
-    }
 
     return result;
 }
 
 // Методы для работы с общим файлом инвентарных операций
-bool FileManager::loadInventoryOperations(std::vector<std::shared_ptr<InventoryOperation>>& operations) {
-    try {
+bool FileManager::loadInventoryOperations(std::vector<std::shared_ptr<InventoryOperation>>& operations)
+{
+    try
+    {
         if (!inventoryOperationsFile.Open_file_in()) return false;
 
         operations.clear();
@@ -388,18 +446,21 @@ bool FileManager::loadInventoryOperations(std::vector<std::shared_ptr<InventoryO
         Return returnOp;
         WriteOff writeOff;
 
-        while (!inventoryOperationsFile.R_end_file()) {
+        while (!inventoryOperationsFile.R_end_file())
+        {
             // Читаем строку и анализируем ее для определения типа операции
             std::string line;
             inventoryOperationsFile.Read_string_line(line);
 
-            if (!inventoryOperationsFile.R_end_file() && !line.empty()) {
+            if (!inventoryOperationsFile.R_end_file() && !line.empty())
+            {
                 std::istringstream iss(line);
 
                 // Пытаемся определить тип операции по первому полю или структуре данных
                 // Сначала пробуем прочитать как Supply
                 iss >> supply;
-                if (!iss.fail()) {
+                if (!iss.fail())
+                {
                     operations.push_back(std::make_shared<Supply>(supply));
                     continue;
                 }
@@ -408,7 +469,8 @@ bool FileManager::loadInventoryOperations(std::vector<std::shared_ptr<InventoryO
                 iss.clear();
                 iss.str(line);
                 iss >> returnOp;
-                if (!iss.fail()) {
+                if (!iss.fail())
+                {
                     operations.push_back(std::make_shared<Return>(returnOp));
                     continue;
                 }
@@ -417,43 +479,56 @@ bool FileManager::loadInventoryOperations(std::vector<std::shared_ptr<InventoryO
                 iss.clear();
                 iss.str(line);
                 iss >> writeOff;
-                if (!iss.fail()) {
+                if (!iss.fail()) 
                     operations.push_back(std::make_shared<WriteOff>(writeOff));
-                }
             }
         }
         return true;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
         return false;
     }
 }
 
-bool FileManager::saveInventoryOperations(const std::vector<std::shared_ptr<InventoryOperation>>& operations) {
-    try {
+bool FileManager::saveInventoryOperations(const std::vector<std::shared_ptr<InventoryOperation>>& operations)
+{
+    try
+    {
         if (!inventoryOperationsFile.Open_file_out()) return false;
 
-        for (const auto& operation : operations) {
-            if (operation) {
+        for (const auto& operation : operations)
+        {
+            if (operation)
+            {
                 // Используем dynamic_cast для определения конкретного типа
-                if (auto supply = std::dynamic_pointer_cast<Supply>(operation)) {
+                if (auto supply = std::dynamic_pointer_cast<Supply>(operation))
+                {
                     Supply nonConstSupply = *supply;
                     inventoryOperationsFile.Write_record_in_file_text(nonConstSupply);
-                } else if (auto returnOp = std::dynamic_pointer_cast<Return>(operation)) {
+                }
+                else if (auto returnOp = std::dynamic_pointer_cast<Return>(operation))
+                {
                     Return nonConstReturn = *returnOp;
                     inventoryOperationsFile.Write_record_in_file_text(nonConstReturn);
-                } else if (auto writeOff = std::dynamic_pointer_cast<WriteOff>(operation)) {
+                }
+                else if (auto writeOff = std::dynamic_pointer_cast<WriteOff>(operation))
+                {
                     WriteOff nonConstWriteOff = *writeOff;
                     inventoryOperationsFile.Write_record_in_file_text(nonConstWriteOff);
                 }
             }
         }
         return true;
-    } catch (const std::exception& e) {
+    }
+    catch (const std::exception& e)
+    {
         return false;
     }
 }
 
-bool FileManager::addInventoryOperation(std::shared_ptr<InventoryOperation> operation) {
+bool FileManager::addInventoryOperation(std::shared_ptr<InventoryOperation> operation)
+{
     try {
         if (!inventoryOperationsFile.Open_file_out()) return false;
 
@@ -475,7 +550,213 @@ bool FileManager::addInventoryOperation(std::shared_ptr<InventoryOperation> oper
     }
 }
 
-// Закрытие всех файлов
-void FileManager::closeAllFiles() {
-    // Файлы автоматически закрываются в деструкторах File_text
+// Загрузка аналогов из файла
+bool FileManager::loadAnalogues(std::vector<std::shared_ptr<Medicine>>& medicines)
+{
+    try {
+        analoguesFile.Close_file_in();
+
+        if (!analoguesFile.Open_file_in()) {
+            // Файл может не существовать - это нормально
+            return true;
+        }
+
+        // Создаем карту лекарств для быстрого поиска по ID
+        std::map<std::string, std::shared_ptr<Medicine>> medicineMap;
+        for (const auto& med : medicines) {
+            if (med) {
+                medicineMap[med->getId()] = med;
+            }
+        }
+
+        std::string line;
+        while (true) {
+            try {
+                analoguesFile.Read_string_line(line);
+
+                // Формат: medicineId;analogueId
+                size_t delimiterPos = line.find(';');
+                if (delimiterPos != std::string::npos) {
+                    std::string medicineId = line.substr(0, delimiterPos);
+                    std::string analogueId = line.substr(delimiterPos + 1);
+
+                    // Находим лекарство и аналог
+                    auto medicineIt = medicineMap.find(medicineId);
+                    auto analogueIt = medicineMap.find(analogueId);
+
+                    if (medicineIt != medicineMap.end() && analogueIt != medicineMap.end()) {
+                        // Добавляем аналог
+                        medicineIt->second->addAnalogue(analogueIt->second);
+                    }
+                }
+            }
+            catch (const FileParseException& e) {
+                if (std::string(e.what()).find("End of file") != std::string::npos) {
+                    break;
+                }
+                // Игнорируем другие ошибки парсинга и продолжаем
+                continue;
+            }
+        }
+
+        analoguesFile.Close_file_in();
+        return true;
+    }
+    catch (const std::exception& e) {
+        analoguesFile.Close_file_in();
+        return false;
+    }
+}
+
+// Сохранение всех аналогов
+bool FileManager::saveAnalogues(const std::vector<std::shared_ptr<Medicine>>& medicines)
+{
+    try {
+        analoguesFile.Close_file_o();
+
+        if (!analoguesFile.Open_file_trunc()) {
+            return false;
+        }
+
+        for (const auto& medicine : medicines) {
+            if (medicine) {
+                auto analogueIds = medicine->getAnalogueIds();
+                for (const auto& analogueId : analogueIds) {
+                    // Записываем в формате: medicineId;analogueId
+                    std::string line = medicine->getId() + ";" + analogueId;
+                    analoguesFile.Write_string_line(line);
+                }
+            }
+        }
+
+        analoguesFile.Flush();
+        analoguesFile.Close_file_o();
+        return true;
+    }
+    catch (const std::exception& e) {
+        analoguesFile.Close_file_o();
+        return false;
+    }
+}
+
+// Добавление одного аналога
+bool FileManager::addAnalogue(const std::string& medicineId, const std::string& analogueId)
+{
+    try {
+        analoguesFile.Close_file_o();
+
+        if (!analoguesFile.Open_file_out()) {
+            return false;
+        }
+
+        // Записываем в формате: medicineId;analogueId
+        std::string line = medicineId + ";" + analogueId;
+        analoguesFile.Write_string_line(line);
+
+        analoguesFile.Flush();
+        analoguesFile.Close_file_o();
+        return true;
+    }
+    catch (const std::exception& e) {
+        analoguesFile.Close_file_o();
+        return false;
+    }
+}
+
+// Удаление аналога
+bool FileManager::removeAnalogue(const std::string& medicineId, const std::string& analogueId)
+{
+    try {
+        // Для удаления нужно перезаписать весь файл без удаляемой записи
+        analoguesFile.Close_file_in();
+        analoguesFile.Close_file_o();
+
+        if (!analoguesFile.Open_file_in()) {
+            return true; // Файл не существует - значит нечего удалять
+        }
+
+        // Читаем все строки кроме удаляемой
+        std::vector<std::string> lines;
+        std::string line;
+        std::string targetLine = medicineId + ";" + analogueId;
+
+        while (true) {
+            try {
+                analoguesFile.Read_string_line(line);
+                if (line != targetLine) {
+                    lines.push_back(line);
+                }
+            }
+            catch (const FileParseException& e) {
+                if (std::string(e.what()).find("End of file") != std::string::npos) {
+                    break;
+                }
+                continue;
+            }
+        }
+
+        analoguesFile.Close_file_in();
+
+        // Перезаписываем файл
+        if (!analoguesFile.Open_file_trunc()) {
+            return false;
+        }
+
+        for (const auto& savedLine : lines) {
+            analoguesFile.Write_string_line(savedLine);
+        }
+
+        analoguesFile.Flush();
+        analoguesFile.Close_file_o();
+        return true;
+    }
+    catch (const std::exception& e) {
+        analoguesFile.Close_file_in();
+        analoguesFile.Close_file_o();
+        return false;
+    }
+}
+
+// Получение аналогов для конкретного лекарства
+std::vector<std::string> FileManager::getMedicineAnalogues(const std::string& medicineId)
+{
+    std::vector<std::string> analogues;
+
+    try {
+        analoguesFile.Close_file_in();
+
+        if (!analoguesFile.Open_file_in()) {
+            return analogues; // Файл не существует
+        }
+
+        std::string line;
+        while (true) {
+            try {
+                analoguesFile.Read_string_line(line);
+
+                size_t delimiterPos = line.find(';');
+                if (delimiterPos != std::string::npos) {
+                    std::string currentMedicineId = line.substr(0, delimiterPos);
+                    std::string analogueId = line.substr(delimiterPos + 1);
+
+                    if (currentMedicineId == medicineId) {
+                        analogues.push_back(analogueId);
+                    }
+                }
+            }
+            catch (const FileParseException& e) {
+                if (std::string(e.what()).find("End of file") != std::string::npos) {
+                    break;
+                }
+                continue;
+            }
+        }
+
+        analoguesFile.Close_file_in();
+    }
+    catch (const std::exception& e) {
+        analoguesFile.Close_file_in();
+    }
+
+    return analogues;
 }

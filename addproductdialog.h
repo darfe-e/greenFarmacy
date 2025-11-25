@@ -19,14 +19,14 @@ class AddProductDialog : public QDialog
 public:
     explicit AddProductDialog(QWidget *parent = nullptr);
     void setEditMode(bool editMode);
-    void setProductData(const QString& id, const QString& name, double price,
-                        const QString& type, const QDate& expiryDate,
-                        const QString& country, bool prescription,
-                        const QString& substance, const QString& instructions,
-                        // Добавляем параметры для специфичных полей
-                        int tabletUnits = 0, double tabletDosage = 0.0, const QString& tabletCoating = "",
-                        double syrupVolume = 0.0, bool syrupHasSugar = false, const QString& syrupFlavor = "",
-                        double ointmentWeight = 0.0, const QString& ointmentBase = "");
+    // void setProductData(const QString& id, const QString& name, double price,
+    //                     const QString& type, const QDate& expiryDate,
+    //                     const QString& country, bool prescription,
+    //                     const QString& substance, const QString& instructions,
+    //                     // Добавляем параметры для специфичных полей
+    //                     int tabletUnits = 0, double tabletDosage = 0.0, const QString& tabletCoating = "",
+    //                     double syrupVolume = 0.0, bool syrupHasSugar = false, const QString& syrupFlavor = "",
+    //                     double ointmentWeight = 0.0, const QString& ointmentBase = "");
 
     // Методы доступа к основным данным
     QString getId() const;
@@ -96,6 +96,43 @@ private:
 
     // Группа для специфичных полей
     QGroupBox *specificGroup;
+
+
+public:
+    // ... существующие методы доступа
+
+    // Перегруженные методы setProductData
+    void setProductData(const QString& id, const QString& name, double price,
+                        const QString& type, const QDate& expiryDate,
+                        const QString& country, bool prescription,
+                        const QString& substance, const QString& instructions);
+
+    void setProductData(const QString& id, const QString& name, double price,
+                        const QString& type, const QDate& expiryDate,
+                        const QString& country, bool prescription,
+                        const QString& substance, const QString& instructions,
+                        int tabletUnits, double tabletDosage, const QString& tabletCoating);
+
+    void setProductData(const QString& id, const QString& name, double price,
+                        const QString& type, const QDate& expiryDate,
+                        const QString& country, bool prescription,
+                        const QString& substance, const QString& instructions,
+                        double syrupVolume, bool syrupHasSugar, const QString& syrupFlavor);
+
+    void setProductData(const QString& id, const QString& name, double price,
+                        const QString& type, const QDate& expiryDate,
+                        const QString& country, bool prescription,
+                        const QString& substance, const QString& instructions,
+                        double ointmentWeight, const QString& ointmentBase);
+
+    // Основной метод со всеми параметрами (оставляем для обратной совместимости)
+    void setProductData(const QString& id, const QString& name, double price,
+                        const QString& type, const QDate& expiryDate,
+                        const QString& country, bool prescription,
+                        const QString& substance, const QString& instructions,
+                        int tabletUnits, double tabletDosage, const QString& tabletCoating,
+                        double syrupVolume, bool syrupHasSugar, const QString& syrupFlavor,
+                        double ointmentWeight, const QString& ointmentBase);
 };
 
 #endif // ADDPRODUCTDIALOG_H
