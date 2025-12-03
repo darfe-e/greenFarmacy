@@ -12,6 +12,7 @@
 #include "syrup.h"
 #include "filemanager.h"
 #include <QCloseEvent>
+#include "simpleavailabilitydialog.h"
 
 QT_BEGIN_NAMESPACE
 class QListWidget;
@@ -68,7 +69,6 @@ private:
     void loadAllData();
     QString formatProductDetails(std::shared_ptr<MedicalProduct> product);
     void closeEvent(QCloseEvent *event);
-    std::shared_ptr<MedicalProduct> currentProduct;
 
     // UI Components
     QLineEdit *searchEdit;
@@ -114,6 +114,7 @@ private:
     // Менеджер данных
     PharmacyManager pharmacyManager;
     std::shared_ptr<MedicalProduct> currentEditingProduct;
+    std::shared_ptr<MedicalProduct> currentProduct;
 };
 
 #endif // MAINWINDOW_H

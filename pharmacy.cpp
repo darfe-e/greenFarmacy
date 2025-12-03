@@ -140,8 +140,10 @@ std::istream& operator>>(std::istream& is, Pharmacy& pharmacy)
             tokens.push_back(token);
         }
 
+        // Файл pharmacies.txt имеет формат: ID;Название;Адрес;Телефон;Аренда
         if (tokens.size() != 5) {
-            throw InvalidProductDataException("pharmacy data", "invalid number of fields");
+            throw InvalidProductDataException("pharmacy data",
+                                              "invalid number of fields: expected 5, got " + std::to_string(tokens.size()));
         }
 
         pharmacy.id = tokens[0];
@@ -149,20 +151,25 @@ std::istream& operator>>(std::istream& is, Pharmacy& pharmacy)
             throw InvalidProductDataException("Pharmacy ID", "cannot be empty");
         }
 
-        pharmacy.address = tokens[1];
+        // ВАЖНО: Второе поле - название аптеки, а не адрес!
+        pharmacy.name = tokens[1];  // <- это название
+        if (pharmacy.name.empty()) {
+            pharmacy.name = "Аптека №" + pharmacy.id;  // Запасной вариант
+        }
+
+        pharmacy.address = tokens[2];  // Третье поле - адрес
         if (pharmacy.address.empty()) {
             throw InvalidProductDataException("Address", "cannot be empty");
         }
 
-        pharmacy.phoneNumber = tokens[2];
+        pharmacy.phoneNumber = tokens[3];  // Четвертое поле - телефон
         if (pharmacy.phoneNumber.empty()) {
             throw InvalidProductDataException("Phone number", "cannot be empty");
         }
 
-        std::istringstream rentStream(tokens[3]);
+        // Пятое поле - стоимость аренды
+        std::istringstream rentStream(tokens[4]);
         pharmacy.rentCost = SafeInput::readPositiveDouble(rentStream, "Rent cost");
-
-        // Количество продуктов (5-е поле) - только для информации
 
     }
     catch (const PharmacyException&)
@@ -176,6 +183,7 @@ std::istream& operator>>(std::istream& is, Pharmacy& pharmacy)
 
     return is;
 }
+
 std::shared_ptr<MedicalProduct> Pharmacy::findProduct(const std::string& productNameOrId) const
 {
     auto allProducts = getAllProducts();

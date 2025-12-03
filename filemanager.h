@@ -70,6 +70,12 @@ public:
     bool addAnalogue(const std::string& medicineId, const std::string& analogueId);
     bool removeAnalogue(const std::string& medicineId, const std::string& analogueId);
     std::vector<std::string> getMedicineAnalogues(const std::string& medicineId);
+
+    std::vector<std::pair<std::string, int>> getAvailabilityInOtherPharmacies(
+        const std::string& productId);
+
+    // Получить список всех аптек (для отображения названий)
+    std::map<std::string, std::string> getPharmacyNames() const;
 };
 
 #endif // FILEMANAGER_H

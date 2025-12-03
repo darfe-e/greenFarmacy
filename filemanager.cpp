@@ -259,49 +259,100 @@ bool FileManager::loadPharmacies(std::vector<Pharmacy>& pharmacies)
 {
     try
     {
-        pharmaciesFile.Close_file_in();
-
-        if (!pharmaciesFile.Open_file_in())
-            throw FileNotFoundException("pharmacies.txt");
-
         pharmacies.clear();
-        Pharmacy pharmacy;
 
-        while (!pharmaciesFile.R_end_file())
-        {
-            try
-            {
-                pharmaciesFile.Read_record_in_file_text(pharmacy);
-                if (!pharmaciesFile.R_end_file())
-                    pharmacies.push_back(pharmacy);
+        // Пробуем прочитать из файла
+        std::ifstream file("pharmacies.txt");
+        if (file.is_open()) {
+            qDebug() << "Файл pharmacies.txt открыт, читаем...";
+
+            std::string line;
+            int lineNum = 0;
+
+            while (std::getline(file, line)) {
+                lineNum++;
+
+                // Пропускаем пустые строки
+                if (line.empty() || line.find_first_not_of(' ') == std::string::npos) {
+                    continue;
+                }
+
+                qDebug() << "Чтение строки" << lineNum << ":" << QString::fromStdString(line);
+
+                std::istringstream iss(line);
+                std::vector<std::string> tokens;
+                std::string token;
+
+                // Разделяем по ';'
+                while (std::getline(iss, token, ';')) {
+                    tokens.push_back(token);
+                }
+
+                // Ожидаем 5 полей
+                if (tokens.size() == 5) {
+                    try {
+                        std::string id = tokens[0];
+                        std::string name = tokens[1];
+                        std::string address = tokens[2];
+                        std::string phone = tokens[3];
+
+                        // Преобразуем аренду
+                        std::istringstream rentStream(tokens[4]);
+                        double rent;
+                        if (!(rentStream >> rent)) {
+                            qWarning() << "Ошибка преобразования аренды в строке" << lineNum;
+                            continue;
+                        }
+
+                        // Создаем аптеку
+                        pharmacies.push_back(Pharmacy(id, name, address, phone, rent));
+                        qDebug() << "Добавлена аптека:" << QString::fromStdString(id)
+                                 << QString::fromStdString(name)
+                                 << QString::fromStdString(phone);  // Добавляем телефон в лог
+                    }
+                    catch (const std::exception& e) {
+                        qWarning() << "Ошибка обработки строки" << lineNum << ":" << e.what();
+                        continue;
+                    }
+                }
+                else {
+                    qWarning() << "Неверное количество полей в строке" << lineNum
+                               << ":" << tokens.size() << "(ожидалось 5)";
+                }
             }
-            catch (const SerializationException& e)
-            {
-                continue;
-            }
-            catch (const FileParseException& e)
-            {
-                if (std::string(e.what()).find("End of file") != std::string::npos)
-                    break;
-                continue;
+
+            file.close();
+
+            if (!pharmacies.empty()) {
+                qDebug() << "Успешно загружено аптек из файла:" << pharmacies.size();
+                return true;
             }
         }
 
-        pharmaciesFile.Close_file_in();
+        qDebug() << "Файл pharmacies.txt не найден или пуст, используем тестовые данные";
+
+        // Если файл не найден или пуст, используем тестовые данные
+        pharmacies.push_back(Pharmacy("001", "Главная аптека", "ул. Ленина, 10", "+7-495-123-4567", 50000));
+        pharmacies.push_back(Pharmacy("002", "Аптека №2", "пр. Мира, 25", "+7-495-765-4321", 35000));
+        pharmacies.push_back(Pharmacy("003", "Северная аптека", "ул. Северная, 5", "+7-495-555-8899", 28000));
+        pharmacies.push_back(Pharmacy("004", "Западная аптека", "ул. Западная, 15", "+7-495-777-8888", 42000));
+
+        qDebug() << "Использованы тестовые аптеки, количество:" << pharmacies.size();
+
+        // Логируем телефоны для проверки
+        for (const auto& ph : pharmacies) {
+            qDebug() << "Тестовая аптека:" << QString::fromStdString(ph.getName())
+                     << "Телефон:" << QString::fromStdString(ph.getPhoneNumber());
+        }
+
         return true;
-    }
-    catch (const FileNotFoundException& e)
-    {
-        pharmaciesFile.Close_file_in();
-        return false;
     }
     catch (const std::exception& e)
     {
-        pharmaciesFile.Close_file_in();
+        qWarning() << "Исключение в loadPharmacies:" << e.what();
         return false;
     }
 }
-
 bool FileManager::savePharmacies(const std::vector<Pharmacy>& pharmacies)
 {
     try
@@ -759,4 +810,256 @@ std::vector<std::string> FileManager::getMedicineAnalogues(const std::string& me
     }
 
     return analogues;
+}
+
+std::vector<std::pair<std::string, int>> FileManager::getAvailabilityInOtherPharmacies(
+    const std::string& productId)
+{
+    std::vector<std::pair<std::string, int>> result;
+
+    try {
+        qDebug() << "===== НАЧАЛО getAvailabilityInOtherPharmacies =====";
+        qDebug() << "Ищем наличие для productId:" << QString::fromStdString(productId);
+
+        // 1. Сначала загружаем аптеки
+        std::vector<Pharmacy> allPharmacies;
+        if (!loadPharmacies(allPharmacies)) {
+            qWarning() << "Не удалось загрузить аптеки из файла";
+            qDebug() << "Проверьте наличие и формат файла pharmacies.txt";
+            return result;
+        }
+
+        qDebug() << "Успешно загружено аптек:" << allPharmacies.size();
+        for (const auto& pharmacy : allPharmacies) {
+            qDebug() << "  - Аптека:" << QString::fromStdString(pharmacy.getName())
+                     << "ID:" << QString::fromStdString(pharmacy.getId())
+                     << "Телефон:" << QString::fromStdString(pharmacy.getPhoneNumber());
+        }
+
+        // 2. Открываем файл stock.txt
+        std::ifstream stockFile("stock.txt");
+        if (!stockFile.is_open()) {
+            qWarning() << "Не удалось открыть файл stock.txt";
+            qDebug() << "Проверьте наличие файла stock.txt в директории программы";
+            return result;
+        }
+
+        qDebug() << "Файл stock.txt успешно открыт";
+
+        // ID главной аптеки (только число!)
+        std::string mainPharmacyId = "001";
+        qDebug() << "Главная аптека (будет игнорироваться):" << QString::fromStdString(mainPharmacyId);
+
+        // 3. Читаем stock.txt
+        std::string line;
+        int lineNumber = 0;
+        int foundMatches = 0;
+
+        while (std::getline(stockFile, line)) {
+            lineNumber++;
+
+            // Пропускаем пустые строки
+            if (line.empty() || line.find_first_not_of(' ') == std::string::npos) {
+                continue;
+            }
+
+            qDebug() << "--- Строка" << lineNumber << ":" << QString::fromStdString(line);
+
+            // Парсим строку: productId:pharmacyId;quantity;date
+            size_t colonPos = line.find(':');
+            if (colonPos == std::string::npos) {
+                qDebug() << "  Пропускаем: нет двоеточия в строке";
+                continue;
+            }
+
+            std::string prodId = line.substr(0, colonPos);
+            std::string rest = line.substr(colonPos + 1);
+
+            // Удаляем пробелы из productId
+            prodId.erase(std::remove(prodId.begin(), prodId.end(), ' '), prodId.end());
+
+            qDebug() << "  ProductId:" << QString::fromStdString(prodId);
+
+            std::stringstream ss(rest);
+            std::string pharmId, quantityStr, dateStr;
+
+            // Парсим остаток: pharmacyId;quantity;date
+            if (std::getline(ss, pharmId, ';') &&
+                std::getline(ss, quantityStr, ';')) {
+
+                // Удаляем пробелы
+                pharmId.erase(std::remove(pharmId.begin(), pharmId.end(), ' '), pharmId.end());
+                quantityStr.erase(std::remove(quantityStr.begin(), quantityStr.end(), ' '), quantityStr.end());
+
+                qDebug() << "  PharmacyId:" << QString::fromStdString(pharmId);
+                qDebug() << "  QuantityStr:" << QString::fromStdString(quantityStr);
+
+                // Проверяем, что ID состоят только из цифр
+                bool prodIdIsValid = !prodId.empty() &&
+                                     std::all_of(prodId.begin(), prodId.end(), ::isdigit);
+                bool pharmIdIsValid = !pharmId.empty() &&
+                                      std::all_of(pharmId.begin(), pharmId.end(), ::isdigit);
+
+                if (!prodIdIsValid || !pharmIdIsValid) {
+                    qDebug() << "  Пропускаем: ID содержит нецифровые символы";
+                    continue;
+                }
+
+                // Проверяем условия
+                bool productMatches = (prodId == productId);
+                bool notMainPharmacy = (pharmId != mainPharmacyId);
+
+                qDebug() << "  Проверка: productMatches?" << productMatches;
+                qDebug() << "  Проверка: notMainPharmacy?" << notMainPharmacy;
+
+                if (productMatches && notMainPharmacy) {
+                    qDebug() << "  УСЛОВИЯ ВЫПОЛНЕНЫ! Обрабатываем запись...";
+
+                    try {
+                        int quantity = std::stoi(quantityStr);
+                        if (quantity > 0) {
+                            // Ищем аптеку по ID (без префикса "Р")
+                            bool foundPharmacy = false;
+                            for (const auto& pharmacy : allPharmacies) {
+                                // Получаем ID аптеки без префикса "Р"
+                                std::string pharmacyId = pharmacy.getId();
+
+                                qDebug() << "    Сравниваем: pharmacyId =" << QString::fromStdString(pharmacyId)
+                                         << "с pharmId =" << QString::fromStdString(pharmId);
+
+                                if (pharmacyId == pharmId) {
+                                    // Нашли аптеку, добавляем результат
+                                    // ВАЖНО: Добавляем телефон тоже!
+                                    std::string displayName = pharmacy.getName() + "\n" + pharmacy.getAddress() + "\n" + pharmacy.getPhoneNumber();
+                                    result.push_back({displayName, quantity});
+                                    foundPharmacy = true;
+                                    foundMatches++;
+
+                                    qDebug() << "    НАЙДЕНА АПТЕКА!";
+                                    qDebug() << "    Название:" << QString::fromStdString(pharmacy.getName());
+                                    qDebug() << "    Адрес:" << QString::fromStdString(pharmacy.getAddress());
+                                    qDebug() << "    Телефон:" << QString::fromStdString(pharmacy.getPhoneNumber());
+                                    qDebug() << "    Количество:" << quantity;
+                                    break;
+                                }
+                            }
+
+                            if (!foundPharmacy) {
+                                qDebug() << "    Аптека с ID" << QString::fromStdString(pharmId) << "не найдена в списке аптек";
+                                // Если не нашли аптеку, добавляем просто с ID
+                                result.push_back({"Аптека №" + pharmId, quantity});
+                                foundMatches++;
+                            }
+                        } else {
+                            qDebug() << "    Количество <= 0, пропускаем";
+                        }
+                    } catch (const std::exception& e) {
+                        qWarning() << "Ошибка преобразования количества: " << quantityStr.c_str();
+                    }
+                } else {
+                    qDebug() << "  Условия не выполнены, пропускаем";
+                }
+            } else {
+                qDebug() << "  Ошибка парсинга строки";
+            }
+        }
+
+        stockFile.close();
+
+        qDebug() << "===== КОНЕЦ getAvailabilityInOtherPharmacies =====";
+        qDebug() << "Всего найдено записей:" << foundMatches;
+        qDebug() << "Возвращаем результатов:" << result.size();
+
+    } catch (const std::exception& e) {
+        qWarning() << "Ошибка в getAvailabilityInOtherPharmacies: " << e.what();
+    }
+
+    return result;
+}
+
+// Также обновляем метод getPharmacyNames:
+std::map<std::string, std::string> FileManager::getPharmacyNames() const
+{
+    std::map<std::string, std::string> result;
+
+    try {
+        qDebug() << "===== НАЧАЛО getPharmacyNames =====";
+
+        // Читаем файл pharmacies.txt построчно
+        std::ifstream file("pharmacies.txt");
+        if (!file.is_open()) {
+            qWarning() << "Не удалось открыть файл pharmacies.txt";
+            qDebug() << "Файл pharmacies.txt не открыт, возвращаем пустой результат";
+            return result;
+        }
+
+        qDebug() << "Файл pharmacies.txt успешно открыт";
+
+        std::string line;
+        int lineNumber = 0;
+        while (std::getline(file, line)) {
+            lineNumber++;
+
+            // Пропускаем пустые строки
+            if (line.empty() || line.find_first_not_of(' ') == std::string::npos) {
+                continue;
+            }
+
+            qDebug() << "--- Строка" << lineNumber << ":" << QString::fromStdString(line);
+
+            // Парсим строку: id:name;address;phone;rent
+            size_t colonPos = line.find(':');
+            if (colonPos == std::string::npos) {
+                qDebug() << "  Пропускаем: нет двоеточия в строке";
+                continue;
+            }
+
+            std::string id = line.substr(0, colonPos);
+            qDebug() << "  ID аптеки (сырой):" << QString::fromStdString(id);
+
+
+            // Удаляем пробелы
+            id.erase(std::remove(id.begin(), id.end(), ' '), id.end());
+
+            // Проверяем что ID состоит только из цифр
+            if (!id.empty() && !std::all_of(id.begin(), id.end(), ::isdigit)) {
+                qDebug() << "  Пропускаем: ID содержит нецифровые символы";
+                continue;
+            }
+
+            // Ищем первую точку с запятой после двоеточия
+            size_t semicolonPos = line.find(';', colonPos + 1);
+            std::string name;
+            if (semicolonPos != std::string::npos) {
+                name = line.substr(colonPos + 1, semicolonPos - colonPos - 1);
+            } else {
+                name = line.substr(colonPos + 1);
+            }
+
+            // Удаляем пробелы в начале и конце названия
+            id.erase(0, id.find_first_not_of(" \t\r\n"));
+            id.erase(id.find_last_not_of(" \t\r\n") + 1);
+
+            name.erase(0, name.find_first_not_of(" \t\r\n"));
+            name.erase(name.find_last_not_of(" \t\r\n") + 1);
+
+            if (!id.empty() && !name.empty()) {
+                result[id] = name;
+                qDebug() << "  Добавлено в словарь:" << QString::fromStdString(id)
+                         << "->" << QString::fromStdString(name);
+            } else {
+                qDebug() << "  Пропускаем: пустой ID или название";
+            }
+        }
+
+        file.close();
+
+        qDebug() << "===== КОНЕЦ getPharmacyNames =====";
+        qDebug() << "Итого аптек в словаре:" << result.size();
+
+    } catch (const std::exception& e) {
+        qWarning() << "Ошибка в getPharmacyNames: " << e.what();
+    }
+
+    return result;
 }

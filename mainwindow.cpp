@@ -762,9 +762,31 @@ void MainWindow::onShowWriteOffs()
 }
 
 
+// mainwindow.cpp - метод onShowPharmacyAvailability
 void MainWindow::onShowPharmacyAvailability()
 {
-    AvailabilityDialog dialog(this);
+    // Проверяем, выбрано ли лекарство
+    if (!currentProduct) {
+        QMessageBox::information(this, "Информация",
+                                 "Сначала выберите лекарство из списка.");
+        return;
+    }
+
+    // Проверяем, является ли это лекарством (а не другим MedicalProduct)
+    auto medicine = std::dynamic_pointer_cast<Medicine>(currentProduct);
+    if (!medicine) {
+        QMessageBox::information(this, "Информация",
+                                 "Выбранный продукт не является лекарством.");
+        return;
+    }
+
+    // Создаем и показываем диалог
+    SimpleAvailabilityDialog dialog(
+        medicine->getId(),      // ID лекарства (только цифры)
+        medicine->getName(),    // Название лекарства
+        this
+        );
+
     dialog.exec();
 }
 

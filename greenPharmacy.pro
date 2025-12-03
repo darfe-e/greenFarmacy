@@ -26,6 +26,7 @@ SOURCES += \
     return.cpp \
     returnsdialog.cpp \
     safedate.cpp \
+    simpleavailabilitydialog.cpp \
     stockrecord.cpp \
     storage.cpp \
     suppliesdialog.cpp \
@@ -74,6 +75,7 @@ HEADERS += \
     return.h \
     returnsdialog.h \
     safedate.h \
+    simpleavailabilitydialog.h \
     stockrecord.h \
     storage.h \
     suppliesdialog.h \
