@@ -77,19 +77,16 @@ void MainWindow::setupUI()
     searchLayout->addWidget(searchButton);
     searchLayout->addWidget(showAllButton);
 
-    // Навигация - УБРАНА КНОПКА "АНАЛОГИ"
+    // Навигация - ОДНА КНОПКА ДЛЯ ОПЕРАЦИЙ
     QGroupBox *navGroup = new QGroupBox("Навигация");
     QVBoxLayout *navLayout = new QVBoxLayout(navGroup);
 
-    suppliesBtn = new QPushButton("Поставки");
-    returnsBtn = new QPushButton("Возвраты");
-    writeOffsBtn = new QPushButton("Списания");
+    // Одна кнопка для всех операций вместо трех
+    operationsBtn = new QPushButton("Операции");
     availabilityBtn = new QPushButton("Наличие в аптеках");
     addProductBtn = new QPushButton("Добавить лекарство");
 
-    navLayout->addWidget(suppliesBtn);
-    navLayout->addWidget(returnsBtn);
-    navLayout->addWidget(writeOffsBtn);
+    navLayout->addWidget(operationsBtn);
     navLayout->addWidget(availabilityBtn);
     navLayout->addWidget(addProductBtn);
 
@@ -139,13 +136,13 @@ void MainWindow::setupUI()
     editBtn = new QPushButton("Изменить");
     deleteBtn = new QPushButton("Удалить");
     addAnalogueBtn = new QPushButton("Добавить аналог");
-    viewAnaloguesBtn = new QPushButton("Просмотр аналогов"); // НОВАЯ КНОПКА В ПРАВОЙ ПАНЕЛИ
+    viewAnaloguesBtn = new QPushButton("Просмотр аналогов");
 
     editLayout->addWidget(editLabel);
     editLayout->addWidget(editBtn);
     editLayout->addWidget(deleteBtn);
     editLayout->addWidget(addAnalogueBtn);
-    editLayout->addWidget(viewAnaloguesBtn); // ДОБАВЛЕНА В ПРАВУЮ ПАНЕЛЬ
+    editLayout->addWidget(viewAnaloguesBtn);
     editLayout->addStretch();
 
     // Добавляем панели в основной layout
@@ -157,9 +154,10 @@ void MainWindow::setupUI()
     connect(searchEdit, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
     connect(searchButton, &QPushButton::clicked, this, &MainWindow::onSearchButtonClicked);
     connect(showAllButton, &QPushButton::clicked, this, &MainWindow::onShowAllProducts);
-    connect(suppliesBtn, &QPushButton::clicked, this, &MainWindow::onShowSupplies);
-    connect(returnsBtn, &QPushButton::clicked, this, &MainWindow::onShowReturns);
-    connect(writeOffsBtn, &QPushButton::clicked, this, &MainWindow::onShowWriteOffs);
+
+    // Подключаем одну кнопку вместо трех
+    connect(operationsBtn, &QPushButton::clicked, this, &MainWindow::onShowOperations);
+
     connect(availabilityBtn, &QPushButton::clicked, this, &MainWindow::onShowPharmacyAvailability);
     connect(addProductBtn, &QPushButton::clicked, this, &MainWindow::onAddProduct);
     connect(saveBtn, &QPushButton::clicked, this, &MainWindow::onSaveChanges);
@@ -790,26 +788,18 @@ void MainWindow::onProductSelected(QListWidgetItem *item)
 }
 
 
-void MainWindow::onShowSupplies()
+void MainWindow::onShowOperations()
 {
-    // Используем OperationsDialog для поставок
+    // Открываем диалог операций с типом "Поставки" по умолчанию
+    // Внутри диалога можно переключаться между типами операций
     OperationsDialog dialog(pharmacyManager, OperationsDialog::SUPPLY, this);
     dialog.exec();
 }
 
-void MainWindow::onShowReturns()
-{
-    // Используем OperationsDialog для возвратов
-    OperationsDialog dialog(pharmacyManager, OperationsDialog::RETURN, this);
-    dialog.exec();
-}
-
-void MainWindow::onShowWriteOffs()
-{
-    // Используем OperationsDialog для списаний
-    OperationsDialog dialog(pharmacyManager, OperationsDialog::WRITEOFF, this);
-    dialog.exec();
-}
+// Удаляем старые слоты:
+// void MainWindow::onShowSupplies() { ... }
+// void MainWindow::onShowReturns() { ... }
+// void MainWindow::onShowWriteOffs() { ... }
 
 
 // mainwindow.cpp - метод onShowPharmacyAvailability

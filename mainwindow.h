@@ -39,9 +39,7 @@ private slots:
     void onSearchEnterPressed();
     void onShowAllProducts();
     void onProductSelected(QListWidgetItem *item);
-    void onShowSupplies();
-    void onShowReturns();
-    void onShowWriteOffs();
+    void onShowOperations();
     void onShowAnalogues();
     void onShowPharmacyAvailability();
     void onAddProduct();
@@ -81,9 +79,7 @@ private:
     QPushButton *showAllButton;
 
     // Navigation
-    QPushButton *suppliesBtn;
-    QPushButton *returnsBtn;
-    QPushButton *writeOffsBtn;
+    QPushButton *operationsBtn;
     QPushButton *analoguesBtn;
     QPushButton *availabilityBtn;
     QPushButton *addProductBtn;
