@@ -62,57 +62,61 @@ Supply& Supply::operator=(const Supply& other)
     return *this;
 }
 
+// Вывод в файл
 std::ostream& operator<<(std::ostream& os, const Supply& supply)
 {
-    os << static_cast<const InventoryOperation&>(supply) << ";"
+    os << supply.id << ";"
+       << supply.operationDate.toString() << ";"
+       << supply.product->getId() << ";"
+       << supply.quantity << ";"
+       << supply.status << ";"
        << supply.source << ";"
        << supply.destination;
-
     return os;
 }
 
+// Ввод из файла
 std::istream& operator>>(std::istream& is, Supply& supply)
 {
-    try
-    {
-        std::string line;
-        std::getline(is, line);
-
-        std::istringstream iss(line);
-        std::vector<std::string> tokens;
-        std::string token;
-
-        while (std::getline(iss, token, ';')) {
-            tokens.push_back(token);
-        }
-
-        if (tokens.size() < 3) {
-            throw InventoryException("Invalid number of fields for supply operation");
-        }
-
-        // Восстанавливаем базовую операцию
-        std::istringstream baseStream(tokens[0]);
-        baseStream >> static_cast<InventoryOperation&>(supply);
-
-        // Source и Destination
-        supply.source = tokens[1];
-        if (supply.source.empty()) {
-            throw InventoryException("Supply source cannot be empty");
-        }
-
-        supply.destination = tokens[2];
-        if (supply.destination.empty()) {
-            throw InventoryException("Supply destination cannot be empty");
-        }
-
+    std::string line;
+    if (!std::getline(is, line) || line.empty()) {
+        is.setstate(std::ios::failbit);
+        return is;
     }
-    catch (const InventoryException&)
-    {
-        throw;
+
+    std::vector<std::string> tokens;
+    std::stringstream ss(line);
+    std::string token;
+
+    while (std::getline(ss, token, ';')) {
+        tokens.push_back(token);
     }
-    catch (const std::exception& e)
-    {
-        throw InventoryException("Error reading supply data: " + std::string(e.what()));
+
+    // Для Supply должно быть 7 полей
+    if (tokens.size() < 7) {
+        throw InventoryException("Invalid number of fields for supply operation");
+    }
+
+    try {
+        // Заполняем поля напрямую
+        supply.id = tokens[0];
+        supply.operationDate = SafeDate::fromString(tokens[1]);
+
+        // Создаем временный продукт
+        supply.product = std::make_shared<MedicalProduct>(
+            tokens[2], "Temp Product", 0.0, SafeDate(), "Unknown");
+
+        supply.quantity = std::stoi(tokens[3]);
+        supply.status = tokens[4];
+        supply.source = tokens[5];
+        supply.destination = tokens[6];
+
+        if (supply.source.empty() || supply.destination.empty()) {
+            throw InventoryException("Supply source and destination cannot be empty");
+        }
+    }
+    catch (const std::exception& e) {
+        throw InventoryException("Error reading supply operation: " + std::string(e.what()));
     }
 
     return is;

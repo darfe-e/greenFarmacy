@@ -87,33 +87,42 @@ void PharmacyManager::addOperation(std::shared_ptr<InventoryOperation> operation
     operations.push_back(operation);
 }
 
-std::vector<std::shared_ptr<Supply>> PharmacyManager::getSupplyOperations() const
-{
-    std::vector<std::shared_ptr<Supply>> supplies;
-    for (const auto& operation : operations)
-        if (auto supply = std::dynamic_pointer_cast<Supply>(operation))
-            supplies.push_back(supply);
+#include "pharmacymanager.h"
 
+// ... существующий код ...
+
+std::vector<std::shared_ptr<InventoryOperation>> PharmacyManager::getAllOperations() const {
+    return operations;
+}
+
+// Реализуем методы для получения операций по типам
+std::vector<std::shared_ptr<Supply>> PharmacyManager::getSupplyOperations() const {
+    std::vector<std::shared_ptr<Supply>> supplies;
+    for (const auto& op : operations) {
+        if (auto supply = std::dynamic_pointer_cast<Supply>(op)) {
+            supplies.push_back(supply);
+        }
+    }
     return supplies;
 }
 
-std::vector<std::shared_ptr<Return>> PharmacyManager::getReturnOperations() const
-{
+std::vector<std::shared_ptr<Return>> PharmacyManager::getReturnOperations() const {
     std::vector<std::shared_ptr<Return>> returns;
-    for (const auto& operation : operations)
-        if (auto returnOp = std::dynamic_pointer_cast<Return>(operation))
+    for (const auto& op : operations) {
+        if (auto returnOp = std::dynamic_pointer_cast<Return>(op)) {
             returns.push_back(returnOp);
-
+        }
+    }
     return returns;
 }
 
-std::vector<std::shared_ptr<WriteOff>> PharmacyManager::getWriteOffOperations() const
-{
+std::vector<std::shared_ptr<WriteOff>> PharmacyManager::getWriteOffOperations() const {
     std::vector<std::shared_ptr<WriteOff>> writeOffs;
-    for (const auto& operation : operations)
-        if (auto writeOff = std::dynamic_pointer_cast<WriteOff>(operation))
+    for (const auto& op : operations) {
+        if (auto writeOff = std::dynamic_pointer_cast<WriteOff>(op)) {
             writeOffs.push_back(writeOff);
-
+        }
+    }
     return writeOffs;
 }
 
@@ -291,4 +300,34 @@ bool PharmacyManager::updateProduct(std::shared_ptr<MedicalProduct> updatedProdu
     }
 
     return false;
+}
+
+
+void PharmacyManager::loadSuppliesFromFile(const std::string& filename)
+{
+    try {
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+            throw std::runtime_error("Cannot open supplies file");
+        }
+
+        std::string line;
+        while (std::getline(file, line)) {
+            if (!line.empty()) {
+                std::istringstream iss(line);
+                std::string type;
+                std::getline(iss, type, ';');
+
+                if (type == "SUPPLY") {
+                    Supply supply;
+                    iss >> supply;
+                    addOperation(std::make_shared<Supply>(supply));
+                }
+            }
+        }
+
+        file.close();
+    } catch (const std::exception& e) {
+        throw std::runtime_error("Error loading supplies: " + std::string(e.what()));
+    }
 }

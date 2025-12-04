@@ -53,6 +53,10 @@ private slots:
     void onItemSelected();
     void onAddAnalogue();
     void showProductDetailsInDialog(const QString& productId, QTextEdit* textEdit);
+    void onSuppliesClicked();
+    void onReturnsClicked();
+    void onWriteOffsClicked();
+    std::string generateOperationId();
 
 private:
     void setupUI();

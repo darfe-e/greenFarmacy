@@ -41,6 +41,8 @@ public:
     std::vector<std::shared_ptr<Supply>> getSupplyOperations() const;
     std::vector<std::shared_ptr<Return>> getReturnOperations() const;
     std::vector<std::shared_ptr<WriteOff>> getWriteOffOperations() const;
+    std::vector<std::shared_ptr<InventoryOperation>> getAllOperations() const;
+    void loadSuppliesFromFile(const std::string& filename);
 
     // Поиск и аналитика
     std::vector<std::shared_ptr<MedicalProduct>> searchProductsByCountry(const std::string& country) const;

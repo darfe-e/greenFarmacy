@@ -54,49 +54,56 @@ Return& Return::operator=(const Return& other)
 
 std::ostream& operator<<(std::ostream& os, const Return& returnOp)
 {
-    os << static_cast<const InventoryOperation&>(returnOp) << ";"
+    os << returnOp.id << ";"
+       << returnOp.operationDate.toString() << ";"
+       << returnOp.product->getId() << ";"
+       << returnOp.quantity << ";"
+       << returnOp.status << ";"
        << returnOp.reason;
-
     return os;
 }
 
+// Ввод из файла
 std::istream& operator>>(std::istream& is, Return& returnOp)
 {
-    try
-    {
-        std::string line;
-        std::getline(is, line);
+    std::string line;
+    if (!std::getline(is, line) || line.empty()) {
+        is.setstate(std::ios::failbit);
+        return is;
+    }
 
-        std::istringstream iss(line);
-        std::vector<std::string> tokens;
-        std::string token;
+    std::vector<std::string> tokens;
+    std::stringstream ss(line);
+    std::string token;
 
-        while (std::getline(iss, token, ';')) {
-            tokens.push_back(token);
-        }
+    while (std::getline(ss, token, ';')) {
+        tokens.push_back(token);
+    }
 
-        if (tokens.size() < 2) {
-            throw InventoryException("Invalid number of fields for return operation");
-        }
+    // Для Return должно быть 6 полей
+    if (tokens.size() < 6) {
+        throw InventoryException("Invalid number of fields for return operation");
+    }
 
-        // Восстанавливаем базовую операцию
-        std::istringstream baseStream(tokens[0]);
-        baseStream >> static_cast<InventoryOperation&>(returnOp);
+    try {
+        // Заполняем поля напрямую
+        returnOp.id = tokens[0];
+        returnOp.operationDate = SafeDate::fromString(tokens[1]);
 
-        // Reason
-        returnOp.reason = tokens[1];
+        // Создаем временный продукт
+        returnOp.product = std::make_shared<MedicalProduct>(
+            tokens[2], "Temp Product", 0.0, SafeDate(), "Unknown");
+
+        returnOp.quantity = std::stoi(tokens[3]);
+        returnOp.status = tokens[4];
+        returnOp.reason = tokens[5];
+
         if (returnOp.reason.empty()) {
             throw InventoryException("Return reason cannot be empty");
         }
-
     }
-    catch (const InventoryException&)
-    {
-        throw;
-    }
-    catch (const std::exception& e)
-    {
-        throw InventoryException("Error reading return data: " + std::string(e.what()));
+    catch (const std::exception& e) {
+        throw InventoryException("Error reading return operation: " + std::string(e.what()));
     }
 
     return is;

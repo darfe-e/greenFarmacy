@@ -56,51 +56,59 @@ WriteOff& WriteOff::operator=(const WriteOff& other)
     return *this;
 }
 
+// Вывод в файл
 std::ostream& operator<<(std::ostream& os, const WriteOff& writeOff)
 {
-    os << static_cast<const InventoryOperation&>(writeOff) << ";"
+    os << writeOff.id << ";"
+       << writeOff.operationDate.toString() << ";"
+       << writeOff.product->getId() << ";"
+       << writeOff.quantity << ";"
+       << writeOff.status << ";"
        << writeOff.writeOffReason;
-
     return os;
 }
 
+// Ввод из файла
 std::istream& operator>>(std::istream& is, WriteOff& writeOff)
 {
-    try
-    {
-        std::string line;
-        std::getline(is, line);
+    std::string line;
+    if (!std::getline(is, line) || line.empty()) {
+        is.setstate(std::ios::failbit);
+        return is;
+    }
 
-        std::istringstream iss(line);
-        std::vector<std::string> tokens;
-        std::string token;
+    std::vector<std::string> tokens;
+    std::stringstream ss(line);
+    std::string token;
 
-        while (std::getline(iss, token, ';')) {
-            tokens.push_back(token);
-        }
+    while (std::getline(ss, token, ';')) {
+        tokens.push_back(token);
+    }
 
-        if (tokens.size() < 2) {
-            throw InventoryException("Invalid number of fields for write-off operation");
-        }
+    // Для WriteOff должно быть 6 полей
+    if (tokens.size() < 6) {
+        throw InventoryException("Invalid number of fields for write-off operation");
+    }
 
-        // Восстанавливаем базовую операцию
-        std::istringstream baseStream(tokens[0]);
-        baseStream >> static_cast<InventoryOperation&>(writeOff);
+    try {
+        // Заполняем поля напрямую
+        writeOff.id = tokens[0];
+        writeOff.operationDate = SafeDate::fromString(tokens[1]);
 
-        // Write-off Reason
-        writeOff.writeOffReason = tokens[1];
+        // Создаем временный продукт
+        writeOff.product = std::make_shared<MedicalProduct>(
+            tokens[2], "Temp Product", 0.0, SafeDate(), "Unknown");
+
+        writeOff.quantity = std::stoi(tokens[3]);
+        writeOff.status = tokens[4];
+        writeOff.writeOffReason = tokens[5];
+
         if (writeOff.writeOffReason.empty()) {
             throw InventoryException("Write-off reason cannot be empty");
         }
-
     }
-    catch (const InventoryException&)
-    {
-        throw;
-    }
-    catch (const std::exception& e)
-    {
-        throw InventoryException("Error reading write-off data: " + std::string(e.what()));
+    catch (const std::exception& e) {
+        throw InventoryException("Error reading write-off operation: " + std::string(e.what()));
     }
 
     return is;

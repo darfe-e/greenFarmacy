@@ -26,6 +26,7 @@ public:
     WriteOff& operator=(const WriteOff& other);
     friend std::ostream& operator<<(std::ostream& os, const WriteOff& writeOff);
     friend std::istream& operator>>(std::istream& is, WriteOff& writeOff);
+
 };
 
 #endif

@@ -40,6 +40,8 @@ public:
     InventoryOperation& operator=(const InventoryOperation& other);
     friend std::ostream& operator<<(std::ostream& os, const InventoryOperation& operation);
     friend std::istream& operator>>(std::istream& is, InventoryOperation& operation);
+
+
 };
 
 #endif

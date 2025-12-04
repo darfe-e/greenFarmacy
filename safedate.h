@@ -26,6 +26,9 @@ public:
     int getMonth() const { return date.tm_mon + 1; }
     int getDay() const { return date.tm_mday; }
     static SafeDate fromString(const std::string& dateStr);
+
+    static SafeDate currentDate();
+    SafeDate();
 };
 
 #endif // SAFEDATE_H

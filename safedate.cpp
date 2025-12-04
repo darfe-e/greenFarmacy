@@ -1,6 +1,19 @@
 #include "safedate.h"
 #include <sstream>
 
+SafeDate::SafeDate() {
+    std::time_t t = std::time(nullptr);
+    std::tm* now = std::localtime(&t);
+
+    date.tm_year = now->tm_year;
+    date.tm_mon = now->tm_mon;
+    date.tm_mday = now->tm_mday;
+    date.tm_hour = 0;
+    date.tm_min = 0;
+    date.tm_sec = 0;
+    date.tm_isdst = -1;
+}
+
 SafeDate::SafeDate(int year, int month, int day)
 {
     if (year < 1900) throw std::invalid_argument("Year must be >= 1900");
@@ -87,4 +100,8 @@ SafeDate SafeDate::fromString(const std::string& dateStr)
     }
 
     throw std::invalid_argument("Invalid date format: " + dateStr + ". Expected: YYYY-MM-DD");
+}
+
+SafeDate SafeDate::currentDate() {
+    return SafeDate(); // используем конструктор по умолчанию
 }

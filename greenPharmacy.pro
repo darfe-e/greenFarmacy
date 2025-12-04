@@ -21,6 +21,7 @@ SOURCES += \
     medicalproduct.cpp \
     medicine.cpp \
     ointment.cpp \
+    operationsdialog.cpp \
     pharmacy.cpp \
     pharmacymanager.cpp \
     return.cpp \
@@ -70,6 +71,7 @@ HEADERS += \
     medicalproduct.h \
     medicine.h \
     ointment.h \
+    operationsdialog.h \
     pharmacy.h \
     pharmacymanager.h \
     return.h \

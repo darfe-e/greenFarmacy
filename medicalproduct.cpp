@@ -21,18 +21,18 @@ MedicalProduct::MedicalProduct(std::string id, std::string name, double basePric
     if (this->basePrice < 0) throw InvalidProductDataException("price", "cannot be negative");
     if (this->manufacturerCountry.empty()) throw InvalidProductDataException("manufacturer country", "cannot be empty");
 
-    try
-    {
-        if (expDate.isExpired()) throw ExpiredProductException(this->id, expDate);
-    }
-    catch (const ExpiredProductException&)
-    {
-        throw; // Перебрасываем как есть
-    }
-    catch (const std::exception& e)
-    {
-        throw InvalidProductDataException("expiration date", e.what());
-    }
+    // try
+    // {
+    //     if (expDate.isExpired()) throw ExpiredProductException(this->id, expDate);
+    // }
+    // catch (const ExpiredProductException&)
+    // {
+    //     throw; // Перебрасываем как есть
+    // }
+    // catch (const std::exception& e)
+    // {
+    //     throw InvalidProductDataException("expiration date", e.what());
+    // }
 }
 
 MedicalProduct::MedicalProduct(const MedicalProduct& other)

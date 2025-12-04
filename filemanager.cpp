@@ -17,7 +17,7 @@ FileManager* FileManager::instance = nullptr;
 FileManager::FileManager()
     : medicinesFile("medicines.txt")
     , pharmaciesFile("pharmacies.txt")
-    , inventoryOperationsFile("inventory_operations.txt")
+    , inventoryOperationsFile("operations.txt")
     , stockFile("stock.txt")
     , analoguesFile("analogues.txt")  // ДОБАВЛЯЕМ
 {
@@ -483,7 +483,6 @@ std::vector<std::string> FileManager::findPharmaciesWithProduct(const std::strin
     return result;
 }
 
-// Методы для работы с общим файлом инвентарных операций
 bool FileManager::loadInventoryOperations(std::vector<std::shared_ptr<InventoryOperation>>& operations)
 {
     try
@@ -492,52 +491,99 @@ bool FileManager::loadInventoryOperations(std::vector<std::shared_ptr<InventoryO
 
         operations.clear();
 
-        // Временные объекты для чтения
-        Supply supply;
-        Return returnOp;
-        WriteOff writeOff;
-
         while (!inventoryOperationsFile.R_end_file())
         {
-            // Читаем строку и анализируем ее для определения типа операции
-            std::string line;
-            inventoryOperationsFile.Read_string_line(line);
+            try {
+                std::string line;
+                inventoryOperationsFile.Read_string_line(line);
 
-            if (!inventoryOperationsFile.R_end_file() && !line.empty())
-            {
-                std::istringstream iss(line);
+                if (line.empty()) continue;
 
-                // Пытаемся определить тип операции по первому полю или структуре данных
-                // Сначала пробуем прочитать как Supply
-                iss >> supply;
-                if (!iss.fail())
-                {
-                    operations.push_back(std::make_shared<Supply>(supply));
-                    continue;
+                // Определяем тип операции по маркеру
+                if (line.find("SUPPLY;") == 0) {
+                    std::string data = line.substr(7);
+                    std::istringstream iss(data);
+
+                    Supply supply;
+                    iss >> supply;
+                    if (!iss.fail()) {
+                        operations.push_back(std::make_shared<Supply>(supply));
+                    }
                 }
+                else if (line.find("RETURN;") == 0) {
+                    std::string data = line.substr(7);
+                    std::istringstream iss(data);
 
-                // Если не Supply, пробуем Return
-                iss.clear();
-                iss.str(line);
-                iss >> returnOp;
-                if (!iss.fail())
-                {
-                    operations.push_back(std::make_shared<Return>(returnOp));
-                    continue;
+                    Return returnOp;
+                    iss >> returnOp;
+                    if (!iss.fail()) {
+                        operations.push_back(std::make_shared<Return>(returnOp));
+                    }
                 }
+                else if (line.find("WRITEOFF;") == 0) {
+                    std::string data = line.substr(9);
+                    std::istringstream iss(data);
 
-                // Если не Return, пробуем WriteOff
-                iss.clear();
-                iss.str(line);
-                iss >> writeOff;
-                if (!iss.fail()) 
-                    operations.push_back(std::make_shared<WriteOff>(writeOff));
+                    WriteOff writeOff;
+                    iss >> writeOff;
+                    if (!iss.fail()) {
+                        operations.push_back(std::make_shared<WriteOff>(writeOff));
+                    }
+                }
+            }
+            catch (const FileParseException& e) {
+                // Конец файла
+                break;
+            }
+            catch (const std::exception& e) {
+                std::string error = e.what();
+                // ИГНОРИРУЕМ ошибку "Product is expired"
+                if (error.find("Product") != std::string::npos &&
+                    error.find("is expired") != std::string::npos) {
+                    qDebug() << "Игнорируем просроченный временный продукт:" << error.c_str();
+                    continue; // Просто пропускаем эту ошибку
+                }
+                qDebug() << "Ошибка чтения операции:" << e.what();
+                continue;
             }
         }
+
+        qDebug() << "Загружено операций:" << operations.size();
         return true;
     }
     catch (const std::exception& e)
     {
+        qDebug() << "Ошибка загрузки операций:" << e.what();
+        return false;
+    }
+}
+
+bool FileManager::addInventoryOperation(std::shared_ptr<InventoryOperation> operation)
+{
+    try {
+        // Открываем файл для добавления (append mode)
+        if (!inventoryOperationsFile.Open_file_out()) return false;
+
+        if (operation) {
+            if (auto supply = std::dynamic_pointer_cast<Supply>(operation)) {
+                std::ostringstream oss;
+                oss << "SUPPLY;" << *supply;
+                inventoryOperationsFile.Write_string_line(oss.str());
+            }
+            else if (auto returnOp = std::dynamic_pointer_cast<Return>(operation)) {
+                std::ostringstream oss;
+                oss << "RETURN;" << *returnOp;
+                inventoryOperationsFile.Write_string_line(oss.str());
+            }
+            else if (auto writeOff = std::dynamic_pointer_cast<WriteOff>(operation)) {
+                std::ostringstream oss;
+                oss << "WRITEOFF;" << *writeOff;
+                inventoryOperationsFile.Write_string_line(oss.str());
+            }
+        }
+        return true;
+    } catch (const std::exception& e) {
+        qDebug() << "Ошибка добавления операции:" << e.what();
         return false;
     }
 }
@@ -546,27 +592,25 @@ bool FileManager::saveInventoryOperations(const std::vector<std::shared_ptr<Inve
 {
     try
     {
-        if (!inventoryOperationsFile.Open_file_out()) return false;
+        // Открываем файл для полной перезаписи
+        if (!inventoryOperationsFile.Open_file_trunc()) return false;
 
-        for (const auto& operation : operations)
-        {
-            if (operation)
-            {
-                // Используем dynamic_cast для определения конкретного типа
-                if (auto supply = std::dynamic_pointer_cast<Supply>(operation))
-                {
-                    Supply nonConstSupply = *supply;
-                    inventoryOperationsFile.Write_record_in_file_text(nonConstSupply);
+        for (const auto& operation : operations) {
+            if (operation) {
+                if (auto supply = std::dynamic_pointer_cast<Supply>(operation)) {
+                    std::ostringstream oss;
+                    oss << "SUPPLY;" << *supply;
+                    inventoryOperationsFile.Write_string_line(oss.str());
                 }
-                else if (auto returnOp = std::dynamic_pointer_cast<Return>(operation))
-                {
-                    Return nonConstReturn = *returnOp;
-                    inventoryOperationsFile.Write_record_in_file_text(nonConstReturn);
+                else if (auto returnOp = std::dynamic_pointer_cast<Return>(operation)) {
+                    std::ostringstream oss;
+                    oss << "RETURN;" << *returnOp;
+                    inventoryOperationsFile.Write_string_line(oss.str());
                 }
-                else if (auto writeOff = std::dynamic_pointer_cast<WriteOff>(operation))
-                {
-                    WriteOff nonConstWriteOff = *writeOff;
-                    inventoryOperationsFile.Write_record_in_file_text(nonConstWriteOff);
+                else if (auto writeOff = std::dynamic_pointer_cast<WriteOff>(operation)) {
+                    std::ostringstream oss;
+                    oss << "WRITEOFF;" << *writeOff;
+                    inventoryOperationsFile.Write_string_line(oss.str());
                 }
             }
         }
@@ -574,29 +618,7 @@ bool FileManager::saveInventoryOperations(const std::vector<std::shared_ptr<Inve
     }
     catch (const std::exception& e)
     {
-        return false;
-    }
-}
-
-bool FileManager::addInventoryOperation(std::shared_ptr<InventoryOperation> operation)
-{
-    try {
-        if (!inventoryOperationsFile.Open_file_out()) return false;
-
-        if (operation) {
-            if (auto supply = std::dynamic_pointer_cast<Supply>(operation)) {
-                Supply nonConstSupply = *supply;
-                inventoryOperationsFile.Write_record_in_file_text(nonConstSupply);
-            } else if (auto returnOp = std::dynamic_pointer_cast<Return>(operation)) {
-                Return nonConstReturn = *returnOp;
-                inventoryOperationsFile.Write_record_in_file_text(nonConstReturn);
-            } else if (auto writeOff = std::dynamic_pointer_cast<WriteOff>(operation)) {
-                WriteOff nonConstWriteOff = *writeOff;
-                inventoryOperationsFile.Write_record_in_file_text(nonConstWriteOff);
-            }
-        }
-        return true;
-    } catch (const std::exception& e) {
+        qDebug() << "Ошибка сохранения операций:" << e.what();
         return false;
     }
 }

@@ -42,6 +42,12 @@ public:
         }
     }
 
+    void Close_file_out() {
+        if (file_o.is_open()) {
+            file_o.close();
+        }
+    }
+
     void Flush() {
         if(file_o.is_open()) {
             file_o.flush();

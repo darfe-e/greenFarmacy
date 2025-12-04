@@ -55,52 +55,53 @@ InventoryOperation& InventoryOperation::operator=(const InventoryOperation& othe
     return *this;
 }
 
+// Вывод в файл (компактный формат)
 std::ostream& operator<<(std::ostream& os, const InventoryOperation& operation)
 {
-    os << "Operation ID: " << operation.id << "\n"
-       << "Date: " << operation.operationDate.toString() << "\n"
-       << "Product: " << operation.product->getName() << " (" << operation.product->getId() << ")\n"
-       << "Quantity: " << operation.quantity << "\n"
-       << "Status: " << operation.status << "\n"
-       << "Type: " << operation.getOperationType() << "\n";
-
+    os << operation.id << ";"
+       << operation.operationDate.toString() << ";"
+       << operation.product->getId() << ";"
+       << operation.quantity << ";"
+       << operation.status;
     return os;
 }
 
+// Ввод из файла (компактный формат)
 std::istream& operator>>(std::istream& is, InventoryOperation& operation)
 {
-    try
-    {
-        SafeInput::skipLabel(is); // "Operation ID: "
-        operation.id = SafeInput::readNonEmptyString(is, "Operation ID");
+    std::string line;
+    if (!std::getline(is, line) || line.empty()) {
+        is.setstate(std::ios::failbit);
+        return is;
+    }
 
-        SafeInput::skipLabel(is); // "Date: "
-        std::string dateStr = SafeInput::readNonEmptyString(is, "Date");
-        operation.operationDate = SafeDate::fromString(dateStr);
+    std::vector<std::string> tokens;
+    std::stringstream ss(line);
+    std::string token;
 
-        SafeInput::skipLabel(is); // "Product: "
-        std::string productInfo = SafeInput::readNonEmptyString(is, "Product");
+    while (std::getline(ss, token, ';')) {
+        tokens.push_back(token);
+    }
 
-        // Временный продукт (в реальной системе нужно искать в каталоге)
+    // Должно быть 5 полей: id;date;productId;quantity;status
+    if (tokens.size() < 5) {
+        is.setstate(std::ios::failbit);
+        return is;
+    }
+
+    try {
+        operation.id = tokens[0];
+        operation.operationDate = SafeDate::fromString(tokens[1]);
+
+        // Создаем временный продукт - потом заменится на реальный
         operation.product = std::make_shared<MedicalProduct>(
-            "temp_id", "Temp Product", 0.0, SafeDate(2025, 12, 31), "Unknown");
+            tokens[2], "Temp Product", 0.0, SafeDate(), "Unknown");
 
-        SafeInput::skipLabel(is); // "Quantity: "
-        operation.quantity = SafeInput::readPositiveInt(is, "Quantity");
-
-        SafeInput::skipLabel(is); // "Status: "
-        operation.status = SafeInput::readNonEmptyString(is, "Status");
-
-        SafeInput::skipLabel(is); // "Type: "
-        std::string type = SafeInput::readNonEmptyString(is, "Operation type");
-
+        operation.quantity = std::stoi(tokens[3]);
+        operation.status = tokens[4];
     }
-    catch (const InventoryException&)
-    {
-        throw;
-    }
-    catch (const std::exception& e)
-    {
+    catch (const std::exception& e) {
+        is.setstate(std::ios::failbit);
         throw InventoryException("Error reading inventory operation: " + std::string(e.what()));
     }
 
