@@ -60,6 +60,11 @@ public:
     void displaySupplyInfo() const;
     void displayReturnInfo() const;
     void displayWriteOffInfo() const;
+
+    void clearAll();
+
+    // Добавляем метод для получения всех аптек
+    std::vector<std::shared_ptr<Pharmacy>> getAllPharmacies() const;
 };
 
 #endif // PHARMACYMANAGER_H

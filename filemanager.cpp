@@ -592,10 +592,33 @@ bool FileManager::saveInventoryOperations(const std::vector<std::shared_ptr<Inve
 {
     try
     {
+        // СНАЧАЛА ЧИТАЕМ СУЩЕСТВУЮЩИЕ ОПЕРАЦИИ ИЗ ФАЙЛА
+        std::vector<std::shared_ptr<InventoryOperation>> allOperations;
+        loadInventoryOperations(allOperations); // Загружаем существующие
+
+        // ДОБАВЛЯЕМ НОВЫЕ ОПЕРАЦИИ (которых еще нет в файле)
+        for (const auto& newOp : operations) {
+            if (!newOp) continue;
+
+            // Проверяем, есть ли уже такая операция в файле
+            bool exists = false;
+            for (const auto& existingOp : allOperations) {
+                if (existingOp && existingOp->getId() == newOp->getId()) {
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (!exists) {
+                allOperations.push_back(newOp);
+            }
+        }
+
+        // ТЕПЕРЬ ЗАПИСЫВАЕМ ВСЕ ОПЕРАЦИИ В ФАЙЛ
         // Открываем файл для полной перезаписи
         if (!inventoryOperationsFile.Open_file_trunc()) return false;
 
-        for (const auto& operation : operations) {
+        for (const auto& operation : allOperations) {
             if (operation) {
                 if (auto supply = std::dynamic_pointer_cast<Supply>(operation)) {
                     std::ostringstream oss;
@@ -1084,4 +1107,60 @@ std::map<std::string, std::string> FileManager::getPharmacyNames() const
     }
 
     return result;
+}
+
+bool FileManager::saveAllData(const std::vector<std::shared_ptr<Medicine>>& medicines,
+                              const std::vector<std::shared_ptr<InventoryOperation>>& operations)
+{
+    try {
+        // 1. Сохраняем лекарства
+        if (!saveMedicines(medicines)) {
+            qDebug() << "Ошибка сохранения лекарств";
+            return false;
+        }
+
+        // 2. Сохраняем операции
+        if (!saveInventoryOperations(operations)) {
+            qDebug() << "Ошибка сохранения операций";
+            return false;
+        }
+
+        // 3. Сохраняем аналоги (если есть файл аналогов)
+        if (!saveAnalogues(medicines)) {
+            qDebug() << "Ошибка сохранения аналогов";
+            // Не возвращаем false, так как аналоги не критичны
+        }
+
+        qDebug() << "Все данные успешно сохранены";
+        return true;
+
+    } catch (const std::exception& e) {
+        qDebug() << "Ошибка сохранения всех данных:" << e.what();
+        return false;
+    }
+}
+
+bool FileManager::loadAllData(std::vector<std::shared_ptr<Medicine>>& medicines,
+                              std::vector<std::shared_ptr<InventoryOperation>>& operations)
+{
+    try {
+        // 1. Загружаем лекарства
+        if (!loadMedicines(medicines)) {
+            qDebug() << "Ошибка загрузки лекарств";
+            return false;
+        }
+
+        // 2. Загружаем операции
+        if (!loadInventoryOperations(operations)) {
+            qDebug() << "Ошибка загрузки операций";
+            return false;
+        }
+
+        qDebug() << "Все данные успешно загружены";
+        return true;
+
+    } catch (const std::exception& e) {
+        qDebug() << "Ошибка загрузки всех данных:" << e.what();
+        return false;
+    }
 }

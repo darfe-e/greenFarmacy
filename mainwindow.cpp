@@ -24,6 +24,8 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
+    , dataModified(false)
+    , isClosing(false)
     , currentProduct(nullptr)
     , searchEdit(nullptr)
     , productsList(nullptr)
@@ -77,11 +79,10 @@ void MainWindow::setupUI()
     searchLayout->addWidget(searchButton);
     searchLayout->addWidget(showAllButton);
 
-    // Навигация - ОДНА КНОПКА ДЛЯ ОПЕРАЦИЙ
+    // Навигация
     QGroupBox *navGroup = new QGroupBox("Навигация");
     QVBoxLayout *navLayout = new QVBoxLayout(navGroup);
 
-    // Одна кнопка для всех операций вместо трех
     operationsBtn = new QPushButton("Операции");
     availabilityBtn = new QPushButton("Наличие в аптеках");
     addProductBtn = new QPushButton("Добавить лекарство");
@@ -96,6 +97,10 @@ void MainWindow::setupUI()
 
     saveBtn = new QPushButton("Сохранить изменения");
     undoBtn = new QPushButton("Отменить (Ctrl+Z)");
+
+    // Изначально кнопки неактивны
+    saveBtn->setEnabled(false);
+    undoBtn->setEnabled(false);
 
     actionsLayout->addWidget(saveBtn);
     actionsLayout->addWidget(undoBtn);
@@ -118,11 +123,11 @@ void MainWindow::setupUI()
     contentText->setPlainText("Используйте поиск или нажмите 'Показать все' для отображения лекарств.");
 
     productsList = new QListWidget;
-    productsList->setVisible(false); // Изначально скрыт
+    productsList->setVisible(false);
 
     centerLayout->addWidget(contentLabel);
     centerLayout->addWidget(productsList);
-    centerLayout->addWidget(contentText, 1); // contentText растягивается
+    centerLayout->addWidget(contentText, 1);
 
     // === ПРАВАЯ ПАНЕЛЬ (редактирование) ===
     editPanel = new QWidget;
@@ -145,19 +150,15 @@ void MainWindow::setupUI()
     editLayout->addWidget(viewAnaloguesBtn);
     editLayout->addStretch();
 
-    // Добавляем панели в основной layout
     mainLayout->addWidget(leftPanel);
-    mainLayout->addWidget(centerPanel, 1); // Центральная панель растягивается
+    mainLayout->addWidget(centerPanel, 1);
     mainLayout->addWidget(editPanel);
 
     // Подключаем сигналы
     connect(searchEdit, &QLineEdit::textChanged, this, &MainWindow::onSearchTextChanged);
     connect(searchButton, &QPushButton::clicked, this, &MainWindow::onSearchButtonClicked);
     connect(showAllButton, &QPushButton::clicked, this, &MainWindow::onShowAllProducts);
-
-    // Подключаем одну кнопку вместо трех
     connect(operationsBtn, &QPushButton::clicked, this, &MainWindow::onShowOperations);
-
     connect(availabilityBtn, &QPushButton::clicked, this, &MainWindow::onShowPharmacyAvailability);
     connect(addProductBtn, &QPushButton::clicked, this, &MainWindow::onAddProduct);
     connect(saveBtn, &QPushButton::clicked, this, &MainWindow::onSaveChanges);
@@ -338,16 +339,10 @@ void MainWindow::onAddAnalogue()
             // Получаем выбранные аналоги
             auto selectedAnalogueIds = dialog.getSelectedAnalogues();
 
-            // Очищаем текущие аналоги
+            // Очищаем текущие аналоги ТОЛЬКО В ПАМЯТИ
             currentMedicine->clearAnalogues();
 
-            // Удаляем старые аналоги из файла
-            auto oldAnalogues = FileManager::getInstance().getMedicineAnalogues(currentMedicine->getId());
-            for (const auto& oldAnalogueId : oldAnalogues) {
-                FileManager::getInstance().removeAnalogue(currentMedicine->getId(), oldAnalogueId);
-            }
-
-            // Добавляем новые аналоги
+            // Добавляем новые аналоги ТОЛЬКО В ПАМЯТИ
             for (const auto& analogueId : selectedAnalogueIds) {
                 // Находим лекарство по ID
                 auto it = std::find_if(allMedicines.begin(), allMedicines.end(),
@@ -357,16 +352,15 @@ void MainWindow::onAddAnalogue()
 
                 if (it != allMedicines.end()) {
                     currentMedicine->addAnalogue(*it);
-                    // Сохраняем в файл аналогов
-                    if (!FileManager::getInstance().addAnalogue(currentMedicine->getId(), analogueId)) {
-                        QMessageBox::warning(this, "Предупреждение",
-                                             "Не удалось сохранить аналог в файл: " + QString::fromStdString(analogueId));
-                    }
                 }
             }
 
+            // Устанавливаем флаг изменений
+            dataModified = true;
+            updateActionButtons();
+
             QMessageBox::information(this, "Успех",
-                                     "Аналоги успешно добавлены!");
+                                     "Аналоги успешно обновлены! Не забудьте сохранить изменения.");
 
         } catch (const std::exception& e) {
             QMessageBox::critical(this, "Ошибка",
@@ -452,22 +446,35 @@ void MainWindow::setupColors()
 void MainWindow::loadAllData()
 {
     try {
-        // Сначала загружаем аптеки
-        std::vector<Pharmacy> pharmacies;
-        if (FileManager::getInstance().loadPharmacies(pharmacies)) {
-            for (const auto& pharmacy : pharmacies) {
-                pharmacyManager.addPharmacy(std::make_shared<Pharmacy>(pharmacy));
+        // 1. ПОЛНАЯ ОЧИСТКА ДАННЫХ ПЕРЕД ЗАГРУЗКОЙ
+        // Очищаем контейнеры в PharmacyManager
+        pharmacyManager.clearAll();
+
+        // 2. ЗАГРУЗКА АПТЕК ИЗ ФАЙЛА
+        std::vector<Pharmacy> loadedPharmacies;
+        if (FileManager::getInstance().loadPharmacies(loadedPharmacies)) {
+            for (const auto& pharmacy : loadedPharmacies) {
+                try {
+                    pharmacyManager.addPharmacy(std::make_shared<Pharmacy>(pharmacy));
+                } catch (const std::exception& e) {
+                    qDebug() << "Предупреждение: " << e.what()
+                             << " - аптека уже существует или ошибка добавления";
+                    // Игнорируем ошибку и продолжаем загрузку
+                }
             }
-            qDebug() << "Загружено аптек:" << pharmacies.size();
+            qDebug() << "Загружено аптек:" << loadedPharmacies.size();
         }
 
-        // Загружаем лекарства и проверяем срок годности
+        // 3. ЗАГРУЗКА ЛЕКАРСТВ И ПРОВЕРКА СРОКА ГОДНОСТИ
         std::vector<std::shared_ptr<Medicine>> medicines;
         std::vector<std::shared_ptr<WriteOff>> expiredWriteOffs;
 
         if (FileManager::getInstance().loadMedicines(medicines)) {
             // Получаем текущую дату через статический метод
             SafeDate currentDate = SafeDate::currentDate();
+
+            // ЗАГРУЖАЕМ АНАЛОГИ ИЗ ФАЙЛА
+            FileManager::getInstance().loadAnalogues(medicines);
 
             for (const auto& medicine : medicines) {
                 // Проверяем, истек ли срок годности
@@ -491,13 +498,22 @@ void MainWindow::loadAllData()
                              << "ID:" << QString::fromStdString(medicine->getId());
                 } else {
                     // Добавляем в каталог только если не просрочено
-                    pharmacyManager.addProduct(medicine);
+                    try {
+                        pharmacyManager.addProduct(medicine);
+                    } catch (const std::exception& e) {
+                        qDebug() << "Ошибка при добавлении лекарства: " << e.what();
+                    }
                 }
             }
 
-            // Сохраняем списания в файл
+            // Добавляем списания в память
             for (const auto& writeOff : expiredWriteOffs) {
-                FileManager::getInstance().addInventoryOperation(writeOff);
+                pharmacyManager.addOperation(writeOff);
+            }
+
+            // Устанавливаем флаг изменений, если были созданы списания
+            if (!expiredWriteOffs.empty()) {
+                dataModified = true;
             }
 
             qDebug() << "Загружено лекарств:" << pharmacyManager.getAllProducts().size();
@@ -515,27 +531,57 @@ void MainWindow::loadAllData()
                                  "Не удалось загрузить данные о лекарствах. Файл может быть пустым или отсутствовать.");
         }
 
-        // Загружаем существующие операции
+        // 4. ЗАГРУЗКА СУЩЕСТВУЮЩИХ ОПЕРАЦИЙ ИЗ ФАЙЛА
         std::vector<std::shared_ptr<InventoryOperation>> operations;
         if (FileManager::getInstance().loadInventoryOperations(operations)) {
             for (const auto& operation : operations) {
-                pharmacyManager.addOperation(operation);
+                try {
+                    pharmacyManager.addOperation(operation);
+                } catch (const std::exception& e) {
+                    qDebug() << "Ошибка при добавлении операции: " << e.what();
+                }
             }
-            qDebug() << "Загружено операций:" << operations.size();
+            qDebug() << "Загружено операций из файла:" << operations.size();
         }
 
-        // Загружаем данные о запасах
-        if (FileManager::getInstance().loadStockData(pharmacies, medicines)) {
+        // 5. ЗАГРУЗКА ДАННЫХ О ЗАПАСАХ
+        if (FileManager::getInstance().loadStockData(loadedPharmacies, medicines)) {
             qDebug() << "Данные о запасах загружены";
         }
 
         updateCompleter();
         showProductList();
 
+        // Сбрасываем флаг изменений после успешной загрузки
+        dataModified = false;
+        updateActionButtons();
+
+        // ИТОГОВОЕ СООБЩЕНИЕ В ЛОГАХ
+        qDebug() << "=== Загрузка данных завершена ===";
+        qDebug() << "Аптеки:" << pharmacyManager.getAllPharmacies().size();
+        qDebug() << "Лекарства:" << pharmacyManager.getAllProducts().size();
+        qDebug() << "Всего операций:" << pharmacyManager.getAllOperations().size();
+        qDebug() << "================================";
+
     } catch (const std::exception& e) {
         QMessageBox::critical(this, "Ошибка",
                               QString("Критическая ошибка при загрузке данных: %1").arg(e.what()));
+
+        // Даже при ошибке пытаемся обновить интерфейс
+        updateCompleter();
+        showProductList();
+        updateActionButtons();
     }
+}
+
+void MainWindow::updateActionButtons()
+{
+    // Обновляем состояние кнопок в зависимости от флага изменений
+    saveBtn->setEnabled(dataModified);
+    undoBtn->setEnabled(dataModified);
+
+    // redoBtn всегда неактивна в этой реализации
+    //redoBtn->setEnabled(false);
 }
 
 // Функция генерации ID операции
@@ -837,9 +883,6 @@ void MainWindow::onAddProduct()
 
     if (dialog->exec() == QDialog::Accepted) {
         try {
-            // Вся валидация теперь происходит в конструкторах лекарств
-            // при создании объектов через make_shared
-
             QString type = dialog->getType();
             QString id = dialog->getId().trimmed();
             QString name = dialog->getName().trimmed();
@@ -866,7 +909,6 @@ void MainWindow::onAddProduct()
             SafeDate safeDate(expiryDate.year(), expiryDate.month(), expiryDate.day());
             std::shared_ptr<MedicalProduct> newProduct;
 
-            // Создание объекта - валидация произойдет в конструкторе
             if (type == "Таблетки") {
                 newProduct = std::make_shared<Tablet>(
                     id.toStdString(), name.toStdString(), price, safeDate, country.toStdString(),
@@ -892,20 +934,17 @@ void MainWindow::onAddProduct()
                     );
             }
 
-            // Добавление и сохранение
             if (newProduct) {
                 pharmacyManager.addProduct(newProduct);
 
-                if (auto medicine = std::dynamic_pointer_cast<Medicine>(newProduct)) {
-                    if (!FileManager::getInstance().addMedicine(medicine)) {
-                        pharmacyManager.removeProduct(id.toStdString());
-                        throw std::runtime_error("Ошибка записи в файл");
-                    }
-                }
+                // УСТАНАВЛИВАЕМ ФЛАГ ИЗМЕНЕНИЙ
+                dataModified = true;
+                updateActionButtons();
 
                 updateCompleter();
                 onShowAllProducts();
-                QMessageBox::information(this, "Успех", "Лекарство успешно добавлено!");
+                QMessageBox::information(this, "Успех",
+                                         "Лекарство успешно добавлено в память! Не забудьте сохранить изменения.");
             }
 
         } catch (const std::exception& e) {
@@ -947,16 +986,13 @@ void MainWindow::saveProductChanges(const QString& productId)
 
         // Заполняем диалог текущими данными продукта
         if (auto medicine = std::dynamic_pointer_cast<Medicine>(originalProduct)) {
-            // Преобразуем строку с датой в QDate
             std::string expDateStr = originalProduct->getExpirationDate();
             QDate expiryDate = QDate::fromString(QString::fromStdString(expDateStr), "yyyy-MM-dd");
 
-            // Если парсинг не удался, используем текущую дату + 2 года
             if (!expiryDate.isValid()) {
                 expiryDate = QDate::currentDate().addYears(2);
             }
 
-            // ОБЩИЕ ДАННЫЕ ДЛЯ ВСЕХ ТИПОВ
             QString id = QString::fromStdString(originalProduct->getId());
             QString name = QString::fromStdString(originalProduct->getName());
             double price = originalProduct->getBasePrice();
@@ -965,7 +1001,6 @@ void MainWindow::saveProductChanges(const QString& productId)
             QString substance = QString::fromStdString(medicine->getActiveSubstance());
             QString instructions = QString::fromStdString(medicine->getInstructions());
 
-            // Заполняем данные в зависимости от типа лекарства
             if (auto tablet = std::dynamic_pointer_cast<Tablet>(originalProduct)) {
                 dialog->setProductData(
                     id, name, price, "Таблетки", expiryDate, country,
@@ -992,18 +1027,10 @@ void MainWindow::saveProductChanges(const QString& productId)
                     QString::fromStdString(ointment->getBaseType())
                     );
             }
-            else {
-                // Резервный вариант - заполняем только основные поля
-                dialog->setProductData(
-                    id, name, price, "Таблетки", expiryDate, country,
-                    prescription, substance, instructions
-                    );
-            }
         }
 
-        // Показываем диалог и ждем результат
+        // Показываем диалог
         if (dialog->exec() == QDialog::Accepted) {
-            // Получаем обновленные данные из диалога
             QString type = dialog->getType();
             QString id = dialog->getId().trimmed();
             QString name = dialog->getName().trimmed();
@@ -1014,16 +1041,14 @@ void MainWindow::saveProductChanges(const QString& productId)
             QString substance = dialog->getSubstance().trimmed();
             QString instructions = dialog->getInstructions().trimmed();
 
-            // Валидация данных
+            // Валидация
             if (id.isEmpty()) throw InvalidProductDataException("ID", "не может быть пустым");
             if (name.isEmpty()) throw InvalidProductDataException("Название", "не может быть пустым");
             if (country.isEmpty()) throw InvalidProductDataException("Страна", "не может быть пустой");
             if (substance.isEmpty()) throw InvalidProductDataException("Активное вещество", "не может быть пустым");
             if (instructions.isEmpty()) throw InvalidProductDataException("Инструкция", "не может быть пустой");
-
             if (id.length() < 3) throw InvalidProductDataException("ID", "должен содержать минимум 3 цифры");
 
-            // Проверка что ID состоит только из цифр
             bool isNumeric = true;
             for (QChar c : id) {
                 if (!c.isDigit()) {
@@ -1032,7 +1057,6 @@ void MainWindow::saveProductChanges(const QString& productId)
                 }
             }
             if (!isNumeric) throw InvalidProductDataException("ID", "должен содержать только цифры");
-
             if (price <= 0) throw InvalidProductDataException("Цена", "должна быть положительной");
             if (!expiryDate.isValid()) throw InvalidProductDataException("Срок годности", "неверная дата");
             if (expiryDate <= QDate::currentDate()) throw InvalidProductDataException("Срок годности", "должен быть в будущем");
@@ -1043,14 +1067,13 @@ void MainWindow::saveProductChanges(const QString& productId)
                     pharmacyManager.getProduct(id.toStdString());
                     throw InvalidProductDataException("ID", "уже существует");
                 } catch (...) {
-                    // ID свободен - продолжаем
+                    // ID свободен
                 }
             }
 
             SafeDate safeDate(expiryDate.year(), expiryDate.month(), expiryDate.day());
             std::shared_ptr<MedicalProduct> updatedProduct;
 
-            // Создаем обновленный продукт
             if (type == "Таблетки") {
                 QString coating = dialog->getTabletCoating().trimmed();
                 if (coating.isEmpty()) throw InvalidProductDataException("Покрытие", "не может быть пустым");
@@ -1082,40 +1105,25 @@ void MainWindow::saveProductChanges(const QString& productId)
                     );
             }
 
-            // Сохраняем изменения
             if (updatedProduct) {
-                auto backupProduct = originalProduct;
                 pharmacyManager.updateProduct(updatedProduct);
 
-                // Перезаписываем файл
-                auto allProducts = pharmacyManager.getAllProducts();
-                std::vector<std::shared_ptr<Medicine>> medicines;
-                for (const auto& product : allProducts) {
-                    if (auto medicine = std::dynamic_pointer_cast<Medicine>(product)) {
-                        medicines.push_back(medicine);
-                    }
-                }
+                // УСТАНАВЛИВАЕМ ФЛАГ ИЗМЕНЕНИЙ
+                dataModified = true;
+                updateActionButtons();
 
-                if (!FileManager::getInstance().saveMedicines(medicines)) {
-                    pharmacyManager.updateProduct(backupProduct);
-                    throw std::runtime_error("Ошибка записи в файл");
-                }
-
-                // Обновляем интерфейс
                 showProductDetails(id, QString::fromStdString(updatedProduct->getName()));
                 onShowAllProducts();
-                QMessageBox::information(this, "Успех", "Изменения сохранены!");
+                QMessageBox::information(this, "Успех",
+                                         "Изменения сохранены в памяти! Не забудьте сохранить в файлы.");
             }
         }
-
     }
     catch (const InvalidProductDataException& e) {
-        QMessageBox::warning(this, "Ошибка валидации",
-                             QString("Некорректные данные:\n%1").arg(e.what()));
+        QMessageBox::warning(this, "Ошибка валидации", QString("Некорректные данные:\n%1").arg(e.what()));
     }
     catch (const std::exception& e) {
-        QMessageBox::warning(this, "Ошибка",
-                             QString("Ошибка при сохранении изменений: %1").arg(e.what()));
+        QMessageBox::warning(this, "Ошибка", QString("Ошибка при сохранении изменений: %1").arg(e.what()));
     }
 
     if (dialog) {
@@ -1138,9 +1146,9 @@ void MainWindow::onDeleteProduct()
                                     "Вы уверены, что хотите удалить:\n" + productName + "?\n"
                                                                                         "Будет создана операция возврата.",
                                     QMessageBox::Yes | QMessageBox::No);
-    if (ret == QMessageBox::Yes) {
+
+    if (ret == QMessageBox::Yes) {  // ИСПРАВЛЕНО: было QDialog::Accepted
         try {
-            // Получаем продукт
             auto product = pharmacyManager.getProduct(productId.toStdString());
 
             if (!product) {
@@ -1156,37 +1164,20 @@ void MainWindow::onDeleteProduct()
                 returnId,
                 SafeDate::currentDate(),
                 product,
-                1, // Количество возвращаемого товара
+                1,
                 "Удаление из каталога",
                 "completed"
                 );
 
-            // Добавляем операцию в менеджер
+            // Добавляем операцию В ПАМЯТИ
             pharmacyManager.addOperation(returnOp);
 
-            // И сохраняем в файл
-            if (!FileManager::getInstance().addInventoryOperation(returnOp)) {
-                QMessageBox::warning(this, "Предупреждение",
-                                     "Операция возврата создана, но не сохранена в файл!");
-            }
-
-            // Удаляем из менеджера
+            // Удаляем из менеджера В ПАМЯТИ
             pharmacyManager.removeProduct(productId.toStdString());
 
-            // ПЕРЕЗАПИСЫВАЕМ ВЕСЬ ФАЙЛ БЕЗ УДАЛЕННОГО ПРОДУКТА
-            auto allProducts = pharmacyManager.getAllProducts();
-            std::vector<std::shared_ptr<Medicine>> medicines;
-
-            for (const auto& product : allProducts) {
-                if (auto medicine = std::dynamic_pointer_cast<Medicine>(product)) {
-                    medicines.push_back(medicine);
-                }
-            }
-
-            if (!FileManager::getInstance().saveMedicines(medicines)) {
-                QMessageBox::warning(this, "Ошибка",
-                                     "Лекарство удалено, но не сохранено в файл!");
-            }
+            // УСТАНАВЛИВАЕМ ФЛАГ ИЗМЕНЕНИЙ
+            dataModified = true;
+            updateActionButtons();
 
             // Обновляем интерфейс
             delete productsList->takeItem(productsList->row(item));
@@ -1196,7 +1187,7 @@ void MainWindow::onDeleteProduct()
             contentText->setPlainText("Выберите лекарство из списка для просмотра информации.");
 
             QMessageBox::information(this, "Успех",
-                                     "Лекарство успешно удалено! Создана операция возврата.");
+                                     "Лекарство успешно удалено из памяти! Создана операция возврата. Не забудьте сохранить изменения.");
 
         } catch (const std::exception& e) {
             QMessageBox::warning(this, "Ошибка",
@@ -1208,24 +1199,145 @@ void MainWindow::onDeleteProduct()
 
 void MainWindow::onSaveChanges()
 {
-    pushToUndoStack();
-    QMessageBox::information(this, "Сохранение", "Изменения сохранены (заглушка)");
+    try {
+        // Получаем все данные из контейнеров PharmacyManager
+        auto allProducts = pharmacyManager.getAllProducts();
+        auto allOperations = pharmacyManager.getAllOperations(); // ЭТО ТОЛЬКО ОПЕРАЦИИ В ПАМЯТИ
+
+        qDebug() << "=== СОХРАНЕНИЕ ===";
+        qDebug() << "Операций в памяти:" << allOperations.size();
+
+        // ПРОЧИТАЕМ СУЩЕСТВУЮЩИЕ ОПЕРАЦИИ ИЗ ФАЙЛА
+        std::vector<std::shared_ptr<InventoryOperation>> existingOperations;
+        FileManager::getInstance().loadInventoryOperations(existingOperations);
+        qDebug() << "Операций в файле:" << existingOperations.size();
+
+        // СОБИРАЕМ ВСЕ УНИКАЛЬНЫЕ ОПЕРАЦИИ
+        std::vector<std::shared_ptr<InventoryOperation>> allOperationsToSave = existingOperations;
+
+        // Добавляем операции из памяти, которых нет в файле
+        for (const auto& memOp : allOperations) {
+            if (!memOp) continue;
+
+            bool alreadyExists = false;
+            for (const auto& fileOp : existingOperations) {
+                if (fileOp && fileOp->getId() == memOp->getId()) {
+                    alreadyExists = true;
+                    break;
+                }
+            }
+
+            if (!alreadyExists) {
+                allOperationsToSave.push_back(memOp);
+                qDebug() << "Добавлена новая операция для сохранения:"
+                         << QString::fromStdString(memOp->getId());
+            }
+        }
+
+        qDebug() << "Всего операций для сохранения:" << allOperationsToSave.size();
+
+        // Конвертируем продукты в лекарства для сохранения
+        std::vector<std::shared_ptr<Medicine>> medicines;
+        for (const auto& product : allProducts) {
+            if (auto medicine = std::dynamic_pointer_cast<Medicine>(product)) {
+                medicines.push_back(medicine);
+            }
+        }
+
+        // Полностью перезаписываем файлы с данными из контейнеров
+        bool success = true;
+
+        // 1. Сохраняем лекарства
+        if (!FileManager::getInstance().saveMedicines(medicines)) {
+            success = false;
+            QMessageBox::warning(this, "Предупреждение",
+                                 "Не удалось сохранить лекарства!");
+        }
+
+        // 2. Сохраняем операции (ВСЕ операции, а не только новые)
+        if (!FileManager::getInstance().saveInventoryOperations(allOperationsToSave)) {
+            success = false;
+            QMessageBox::warning(this, "Предупреждение",
+                                 "Не удалось сохранить операции!");
+        }
+
+        // 3. Сохраняем аналоги
+        if (!FileManager::getInstance().saveAnalogues(medicines)) {
+            success = false;
+            QMessageBox::warning(this, "Предупреждение",
+                                 "Не удалось сохранить аналоги!");
+        }
+
+        // 4. Сохраняем запасы
+        auto allPharmacies = pharmacyManager.getAllPharmacies();
+        std::vector<Pharmacy> pharmacyList;
+        for (const auto& pharmacyPtr : allPharmacies) {
+            if (pharmacyPtr) {
+                pharmacyList.push_back(*pharmacyPtr);
+            }
+        }
+
+        if (!FileManager::getInstance().saveStockData(pharmacyList)) {
+            success = false;
+            QMessageBox::warning(this, "Предупреждение",
+                                 "Не удалось сохранить данные о запасах!");
+        }
+
+        if (success) {
+            dataModified = false;
+            updateActionButtons();
+            QMessageBox::information(this, "Сохранение",
+                                     QString("Все изменения успешно сохранены в файлы!\n"
+                                             "Сохранено операций: %1").arg(allOperationsToSave.size()));
+        }
+
+    } catch (const std::exception& e) {
+        QMessageBox::critical(this, "Ошибка",
+                              QString("Ошибка сохранения: %1").arg(e.what()));
+        throw;
+    }
 }
+void MainWindow::onUndo()
+{
+    if (!dataModified) {
+        QMessageBox::information(this, "Отмена",
+                                 "Нет несохраненных изменений для отмены.");
+        return;
+    }
+
+    int ret = QMessageBox::question(this, "Отменить изменения",
+                                    "Вы уверены, что хотите отменить все несохраненные изменения?\n"
+                                    "Все изменения, сделанные после последнего сохранения, будут потеряны.",
+                                    QMessageBox::Yes | QMessageBox::No);
+
+    if (ret == QMessageBox::Yes) {
+        try {
+            // Очищаем контейнеры в PharmacyManager
+            pharmacyManager.clearAll();
+
+            // Загружаем данные из файлов заново (то, что было до изменений)
+            loadAllData(); // Этот метод уже загружает аналоги
+
+            // Сбрасываем флаг изменений
+            dataModified = false;
+            updateActionButtons();
+
+            QMessageBox::information(this, "Отмена",
+                                     "Все несохраненные изменения отменены.\n"
+                                     "Загружены данные из последней сохраненной версии файлов.");
+
+        } catch (const std::exception& e) {
+            QMessageBox::critical(this, "Ошибка",
+                                  QString("Ошибка отмены: %1").arg(e.what()));
+        }
+    }
+}
+
 
 void MainWindow::onCancelEdit()
 {
     hideEditPanel();
     QMessageBox::information(this, "Отмена", "Редактирование отменено");
-}
-
-void MainWindow::onUndo()
-{
-    if (!undoStack.isEmpty()) {
-        undoStack.pop();
-        QMessageBox::information(this, "Отмена", "Последнее действие отменено (заглушка)");
-    } else {
-        QMessageBox::information(this, "Отмена", "Нет действий для отмены");
-    }
 }
 
 void MainWindow::pushToUndoStack()
@@ -1290,33 +1402,37 @@ void MainWindow::performSearch(const QString &searchText)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    try {
-        // Сохраняем все данные при закрытии приложения
-        auto allProducts = pharmacyManager.getAllProducts();
-        std::vector<std::shared_ptr<Medicine>> medicines;
-
-        for (const auto& product : allProducts) {
-            if (auto medicine = std::dynamic_pointer_cast<Medicine>(product)) {
-                medicines.push_back(medicine);
-            }
-        }
-
-        if (!FileManager::getInstance().saveMedicines(medicines)) {
-            QMessageBox::warning(this, "Ошибка",
-                                 "Не удалось сохранить данные о лекарствах при закрытии приложения!");
-        }
-
-
-        qDebug() << "Все данные сохранены, приложение закрывается";
-
-    } catch (const std::exception& e) {
-        QMessageBox::critical(this, "Ошибка",
-                              QString("Ошибка при сохранении данных: %1").arg(e.what()));
+    if (isClosing) {
+        event->accept();
+        return;
     }
 
-    event->accept();
-}
+    if (dataModified) {
+        // Автоматически сохраняем изменения при закрытии программы
+        isClosing = true;
 
+        try {
+            // Сохраняем все изменения автоматически
+            onSaveChanges();  // Это перезапишет файлы с текущими данными из контейнеров
+            event->accept();  // Закрываем окно после успешного сохранения
+        } catch (const std::exception& e) {
+            int ret = QMessageBox::critical(this, "Ошибка сохранения",
+                                            QString("Не удалось сохранить данные перед выходом: %1\n"
+                                                    "Хотите выйти без сохранения?").arg(e.what()),
+                                            QMessageBox::Yes | QMessageBox::No);
+
+            if (ret == QMessageBox::Yes) {
+                event->accept();  // Выходим без сохранения
+            } else {
+                event->ignore();  // Не закрываем окно
+                isClosing = false;
+            }
+        }
+    } else {
+        // Нет изменений, просто закрываем
+        event->accept();
+    }
+}
 
 void MainWindow::onSuppliesClicked()
 {

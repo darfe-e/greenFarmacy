@@ -48,6 +48,7 @@ private slots:
     void onSaveChanges();
     void onCancelEdit();
     void onUndo();
+
     void onItemSelected();
     void onAddAnalogue();
     void showProductDetailsInDialog(const QString& productId, QTextEdit* textEdit);
@@ -71,6 +72,11 @@ private:
     void loadAllData();
     QString formatProductDetails(std::shared_ptr<MedicalProduct> product);
     void closeEvent(QCloseEvent *event);
+    void updateActionButtons();
+
+
+    bool dataModified; // Флаг изменений данных
+    bool isClosing; // Флаг закрытия программы
 
     // UI Components
     QLineEdit *searchEdit;
@@ -115,6 +121,7 @@ private:
     PharmacyManager pharmacyManager;
     std::shared_ptr<MedicalProduct> currentEditingProduct;
     std::shared_ptr<MedicalProduct> currentProduct;
+
 };
 
 #endif // MAINWINDOW_H

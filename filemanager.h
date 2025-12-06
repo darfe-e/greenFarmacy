@@ -76,6 +76,12 @@ public:
 
     // Получить список всех аптек (для отображения названий)
     std::map<std::string, std::string> getPharmacyNames() const;
+
+    bool saveAllData(const std::vector<std::shared_ptr<Medicine>>& medicines,
+                                  const std::vector<std::shared_ptr<InventoryOperation>>& operations);
+
+    bool loadAllData(std::vector<std::shared_ptr<Medicine>>& medicines,
+                                  std::vector<std::shared_ptr<InventoryOperation>>& operations);
 };
 
 #endif // FILEMANAGER_H

@@ -87,13 +87,6 @@ void PharmacyManager::addOperation(std::shared_ptr<InventoryOperation> operation
     operations.push_back(operation);
 }
 
-#include "pharmacymanager.h"
-
-// ... существующий код ...
-
-std::vector<std::shared_ptr<InventoryOperation>> PharmacyManager::getAllOperations() const {
-    return operations;
-}
 
 // Реализуем методы для получения операций по типам
 std::vector<std::shared_ptr<Supply>> PharmacyManager::getSupplyOperations() const {
@@ -330,4 +323,24 @@ void PharmacyManager::loadSuppliesFromFile(const std::string& filename)
     } catch (const std::exception& e) {
         throw std::runtime_error("Error loading supplies: " + std::string(e.what()));
     }
+}
+
+// Уже есть, но убедимся что правильно
+std::vector<std::shared_ptr<InventoryOperation>> PharmacyManager::getAllOperations() const {
+    return operations;
+}
+
+void PharmacyManager::clearAll() {
+    productsCatalog.clear();
+    operations.clear();
+    pharmacies.clear(); // Добавьте эту строку для очистки аптек
+}
+
+// Добавляем метод для получения всех аптек
+std::vector<std::shared_ptr<Pharmacy>> PharmacyManager::getAllPharmacies() const {
+    std::vector<std::shared_ptr<Pharmacy>> result;
+    for (const auto& pair : pharmacies) {
+        result.push_back(pair.second);
+    }
+    return result;
 }
