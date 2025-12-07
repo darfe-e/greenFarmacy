@@ -26,7 +26,7 @@ private:
     static FileManager* instance;
 
     // Файлы для разных типов данных
-    File_text<std::string> medicinesFile; // Меняем на string и парсим вручную
+    File_text<std::string> medicinesFile;
     File_text<Pharmacy> pharmaciesFile;
     File_text<InventoryOperation> inventoryOperationsFile;
     File_text<StockRecord> stockFile;
@@ -48,12 +48,13 @@ public:
     bool truncateMedicinesFile();
 
     // Методы для работы с файлом pharmacies.txt
-    bool loadPharmacies(std::vector<Pharmacy>& pharmacies);
-    bool savePharmacies(const std::vector<Pharmacy>& pharmacies);
+    bool loadPharmacies(std::vector<std::shared_ptr<Pharmacy>>& pharmacies);  // Изменено
+    bool savePharmacies(const std::vector<std::shared_ptr<Pharmacy>>& pharmacies);  // Изменено
 
     // Методы для работы с файлом stock.txt
-    bool loadStockData(std::vector<Pharmacy>& pharmacies, const std::vector<std::shared_ptr<Medicine>>& medicines);
-    bool saveStockData(const std::vector<Pharmacy>& pharmacies);
+    bool loadStockData(std::vector<std::shared_ptr<Pharmacy>>& pharmacies,  // Изменено
+                       const std::vector<std::shared_ptr<Medicine>>& medicines);
+    bool saveStockData(const std::vector<std::shared_ptr<Pharmacy>>& pharmacies);  // Изменено
 
     // Эффективный поиск препарата по всем аптекам
     std::map<std::string, int> findProductInPharmacies(const std::string& productId);
@@ -63,7 +64,6 @@ public:
     bool loadInventoryOperations(std::vector<std::shared_ptr<InventoryOperation>>& operations);
     bool saveInventoryOperations(const std::vector<std::shared_ptr<InventoryOperation>>& operations);
     bool addInventoryOperation(std::shared_ptr<InventoryOperation> operation);
-
 
     bool loadAnalogues(std::vector<std::shared_ptr<Medicine>>& medicines);
     bool saveAnalogues(const std::vector<std::shared_ptr<Medicine>>& medicines);
@@ -78,10 +78,10 @@ public:
     std::map<std::string, std::string> getPharmacyNames() const;
 
     bool saveAllData(const std::vector<std::shared_ptr<Medicine>>& medicines,
-                                  const std::vector<std::shared_ptr<InventoryOperation>>& operations);
+                     const std::vector<std::shared_ptr<InventoryOperation>>& operations);
 
     bool loadAllData(std::vector<std::shared_ptr<Medicine>>& medicines,
-                                  std::vector<std::shared_ptr<InventoryOperation>>& operations);
+                     std::vector<std::shared_ptr<InventoryOperation>>& operations);
 };
 
 #endif // FILEMANAGER_H

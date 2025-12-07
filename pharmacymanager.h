@@ -11,17 +11,27 @@
 #include "Exception/PharmacyExceptions/InvalidProductDataException.h"
 #include "Exception/PharmacyExceptions/ProductNotFoundException.h"
 #include "Exception/PharmacyExceptions/DuplicateProductException.h"
+#include "binarytree.h"  // Добавляем ваше бинарное дерево
 #include <memory>
 #include <map>
 #include <vector>
 #include <string>
+#include <functional>
 
 class PharmacyManager
 {
 private:
     std::map<std::string, std::shared_ptr<MedicalProduct>> productsCatalog;
-    std::map<std::string, std::shared_ptr<Pharmacy>> pharmacies;
+    // Заменяем std::map на binaryTree для аптек
+    binaryTree<std::shared_ptr<Pharmacy>> pharmaciesTree;
     std::vector<std::shared_ptr<InventoryOperation>> operations;
+
+    // Компаратор для сравнения аптек по ID
+    struct PharmacyComparator {
+        bool operator()(const std::shared_ptr<Pharmacy>& a, const std::shared_ptr<Pharmacy>& b) const {
+            return a->getId() < b->getId();
+        }
+    };
 
 public:
     PharmacyManager();
@@ -31,7 +41,7 @@ public:
     void removeProduct(const std::string& productId);
     std::shared_ptr<MedicalProduct> getProduct(const std::string& productId) const;
 
-    // Управление аптеками
+    // Управление аптеками (теперь через бинарное дерево)
     void addPharmacy(std::shared_ptr<Pharmacy> pharmacy);
     void removePharmacy(const std::string& pharmacyId);
     std::shared_ptr<Pharmacy> getPharmacy(const std::string& pharmacyId) const;
@@ -63,8 +73,15 @@ public:
 
     void clearAll();
 
-    // Добавляем метод для получения всех аптек
+    // Метод для получения всех аптек из дерева
     std::vector<std::shared_ptr<Pharmacy>> getAllPharmacies() const;
+
+    // Дополнительный метод для демонстрации работы с деревом
+    void printPharmaciesTree() const;
+
+private:
+    // Вспомогательный метод для поиска аптеки в дереве
+    std::shared_ptr<Pharmacy> findPharmacyInTree(const std::string& pharmacyId) const;
 };
 
 #endif // PHARMACYMANAGER_H

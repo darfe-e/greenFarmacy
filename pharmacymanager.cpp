@@ -6,6 +6,7 @@
 #include <sstream>
 
 PharmacyManager::PharmacyManager()
+    : pharmaciesTree(PharmacyComparator())  // Инициализируем дерево с компаратором
 {
 }
 
@@ -44,15 +45,19 @@ std::shared_ptr<MedicalProduct> PharmacyManager::getProduct(const std::string& p
     return it->second;
 }
 
+// Управление аптеками через бинарное дерево
 void PharmacyManager::addPharmacy(std::shared_ptr<Pharmacy> pharmacy)
 {
     if (!pharmacy)
         throw InvalidProductDataException("pharmacy", "cannot be null");
 
-    if (pharmacies.find(pharmacy->getId()) != pharmacies.end())
+    // Проверяем, нет ли уже аптеки с таким ID
+    auto existing = findPharmacyInTree(pharmacy->getId());
+    if (existing)
         throw DuplicateProductException("Pharmacy with ID: " + pharmacy->getId());
 
-    pharmacies[pharmacy->getId()] = pharmacy;
+    // Добавляем в дерево
+    pharmaciesTree.push(pharmacy);
 }
 
 void PharmacyManager::removePharmacy(const std::string& pharmacyId)
@@ -60,11 +65,13 @@ void PharmacyManager::removePharmacy(const std::string& pharmacyId)
     if (pharmacyId.empty())
         throw InvalidProductDataException("pharmacy ID", "cannot be empty");
 
-    auto it = pharmacies.find(pharmacyId);
-    if (it == pharmacies.end())
+    // Находим аптеку в дереве
+    auto pharmacy = findPharmacyInTree(pharmacyId);
+    if (!pharmacy)
         throw ProductNotFoundException("Pharmacy with ID: " + pharmacyId);
 
-    pharmacies.erase(it);
+    // Удаляем из дерева
+    pharmaciesTree.remove(pharmacy);
 }
 
 std::shared_ptr<Pharmacy> PharmacyManager::getPharmacy(const std::string& pharmacyId) const
@@ -72,11 +79,7 @@ std::shared_ptr<Pharmacy> PharmacyManager::getPharmacy(const std::string& pharma
     if (pharmacyId.empty())
         throw InvalidProductDataException("pharmacy ID", "cannot be empty");
 
-    auto it = pharmacies.find(pharmacyId);
-    if (it == pharmacies.end())
-        throw ProductNotFoundException("Pharmacy with ID: " + pharmacyId);
-
-    return it->second;
+    return findPharmacyInTree(pharmacyId);
 }
 
 void PharmacyManager::addOperation(std::shared_ptr<InventoryOperation> operation)
@@ -86,7 +89,6 @@ void PharmacyManager::addOperation(std::shared_ptr<InventoryOperation> operation
 
     operations.push_back(operation);
 }
-
 
 // Реализуем методы для получения операций по типам
 std::vector<std::shared_ptr<Supply>> PharmacyManager::getSupplyOperations() const {
@@ -172,12 +174,18 @@ std::map<std::string, int> PharmacyManager::getProductAvailability(const std::st
         throw InvalidProductDataException("product ID", "cannot be empty");
 
     std::map<std::string, int> availability;
-    for (const auto& pharmacyPair : pharmacies)
-    {
-        int quantity = pharmacyPair.second->checkStock(productId);
+
+    // Создаем копию дерева для обхода (неконстантную)
+    binaryTree<std::shared_ptr<Pharmacy>> tempTree = pharmaciesTree;
+
+    // Используем неконстантные итераторы
+    for (auto it = tempTree.begin(); it != tempTree.end(); ++it) {
+        auto pharmacy = *it;
+        int quantity = pharmacy->checkStock(productId);
         if (quantity > 0)
-            availability[pharmacyPair.first] = quantity;
+            availability[pharmacy->getId()] = quantity;
     }
+
     return availability;
 }
 
@@ -188,9 +196,9 @@ std::vector<std::pair<std::string, std::string>> PharmacyManager::findProductInP
 
     std::vector<std::pair<std::string, std::string>> result;
 
-    for (const auto& pharmacyPair : pharmacies)
-    {
-        auto pharmacy = pharmacyPair.second;
+    // Обходим все аптеки в дереве
+    for (auto it = pharmaciesTree.begin(); it != pharmaciesTree.end(); ++it) {
+        auto pharmacy = *it;
         auto product = pharmacy->findProduct(productNameOrId);
         if (product)
             result.emplace_back(pharmacy->getId(), pharmacy->getName());
@@ -295,7 +303,6 @@ bool PharmacyManager::updateProduct(std::shared_ptr<MedicalProduct> updatedProdu
     return false;
 }
 
-
 void PharmacyManager::loadSuppliesFromFile(const std::string& filename)
 {
     try {
@@ -325,7 +332,6 @@ void PharmacyManager::loadSuppliesFromFile(const std::string& filename)
     }
 }
 
-// Уже есть, но убедимся что правильно
 std::vector<std::shared_ptr<InventoryOperation>> PharmacyManager::getAllOperations() const {
     return operations;
 }
@@ -333,14 +339,30 @@ std::vector<std::shared_ptr<InventoryOperation>> PharmacyManager::getAllOperatio
 void PharmacyManager::clearAll() {
     productsCatalog.clear();
     operations.clear();
-    pharmacies.clear(); // Добавьте эту строку для очистки аптек
+    pharmaciesTree.clear();  // Очищаем дерево вместо map
 }
 
-// Добавляем метод для получения всех аптек
 std::vector<std::shared_ptr<Pharmacy>> PharmacyManager::getAllPharmacies() const {
     std::vector<std::shared_ptr<Pharmacy>> result;
-    for (const auto& pair : pharmacies) {
-        result.push_back(pair.second);
+
+    // Используем итераторы дерева для обхода
+    for (auto it = pharmaciesTree.begin(); it != pharmaciesTree.end(); ++it) {
+        result.push_back(*it);
     }
+
     return result;
+}
+
+std::shared_ptr<Pharmacy> PharmacyManager::findPharmacyInTree(const std::string& pharmacyId) const
+{
+    // Теперь find_if возвращает обычный iterator, даже в константном методе
+    auto it = pharmaciesTree.find_if([&pharmacyId](const std::shared_ptr<Pharmacy>& pharmacy) {
+        return pharmacy->getId() == pharmacyId;
+    });
+
+    if (it != pharmaciesTree.end()) {
+        return *it;  // Можно разыменовать
+    }
+
+    return nullptr;
 }

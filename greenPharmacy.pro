@@ -64,6 +64,7 @@ HEADERS += \
     addproductdialog.h \
     analoguesdialog.h \
     availabilitydialog.h \
+    binarytree.h \
     file.h \
     filemanager.h \
     inventoryoperation.h \
@@ -76,6 +77,7 @@ HEADERS += \
     pharmacymanager.h \
     return.h \
     returnsdialog.h \
+    reverse_tree_iterator.h \
     safedate.h \
     simpleavailabilitydialog.h \
     stockrecord.h \
@@ -84,6 +86,9 @@ HEADERS += \
     supply.h \
     syrup.h \
     tablet.h \
+    tree_algorithms.h \
+    tree_iterator.h \
+    treenode.h \
     writeoff.h \
     writeoffsdialog.h
 

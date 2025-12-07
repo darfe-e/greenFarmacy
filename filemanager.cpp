@@ -255,7 +255,7 @@ bool FileManager::addMedicine(std::shared_ptr<Medicine> medicine)
     }
 }
 
-bool FileManager::loadPharmacies(std::vector<Pharmacy>& pharmacies)
+bool FileManager::loadPharmacies(std::vector<std::shared_ptr<Pharmacy>>& pharmacies)
 {
     try
     {
@@ -304,11 +304,11 @@ bool FileManager::loadPharmacies(std::vector<Pharmacy>& pharmacies)
                             continue;
                         }
 
-                        // Создаем аптеку
-                        pharmacies.push_back(Pharmacy(id, name, address, phone, rent));
+                        // Создаем shared_ptr на аптеку
+                        pharmacies.push_back(std::make_shared<Pharmacy>(id, name, address, phone, rent));
                         qDebug() << "Добавлена аптека:" << QString::fromStdString(id)
                                  << QString::fromStdString(name)
-                                 << QString::fromStdString(phone);  // Добавляем телефон в лог
+                                 << QString::fromStdString(phone);
                     }
                     catch (const std::exception& e) {
                         qWarning() << "Ошибка обработки строки" << lineNum << ":" << e.what();
@@ -332,17 +332,16 @@ bool FileManager::loadPharmacies(std::vector<Pharmacy>& pharmacies)
         qDebug() << "Файл pharmacies.txt не найден или пуст, используем тестовые данные";
 
         // Если файл не найден или пуст, используем тестовые данные
-        pharmacies.push_back(Pharmacy("001", "Главная аптека", "ул. Ленина, 10", "+7-495-123-4567", 50000));
-        pharmacies.push_back(Pharmacy("002", "Аптека №2", "пр. Мира, 25", "+7-495-765-4321", 35000));
-        pharmacies.push_back(Pharmacy("003", "Северная аптека", "ул. Северная, 5", "+7-495-555-8899", 28000));
-        pharmacies.push_back(Pharmacy("004", "Западная аптека", "ул. Западная, 15", "+7-495-777-8888", 42000));
+        pharmacies.push_back(std::make_shared<Pharmacy>("001", "Главная аптека", "ул. Ленина, 10", "+7-495-123-4567", 50000));
+        pharmacies.push_back(std::make_shared<Pharmacy>("002", "Аптека №2", "пр. Мира, 25", "+7-495-765-4321", 35000));
+        pharmacies.push_back(std::make_shared<Pharmacy>("003", "Северная аптека", "ул. Северная, 5", "+7-495-555-8899", 28000));
+        pharmacies.push_back(std::make_shared<Pharmacy>("004", "Западная аптека", "ул. Западная, 15", "+7-495-777-8888", 42000));
 
         qDebug() << "Использованы тестовые аптеки, количество:" << pharmacies.size();
 
-        // Логируем телефоны для проверки
         for (const auto& ph : pharmacies) {
-            qDebug() << "Тестовая аптека:" << QString::fromStdString(ph.getName())
-                     << "Телефон:" << QString::fromStdString(ph.getPhoneNumber());
+            qDebug() << "Тестовая аптека:" << QString::fromStdString(ph->getName())
+                     << "Телефон:" << QString::fromStdString(ph->getPhoneNumber());
         }
 
         return true;
@@ -353,7 +352,8 @@ bool FileManager::loadPharmacies(std::vector<Pharmacy>& pharmacies)
         return false;
     }
 }
-bool FileManager::savePharmacies(const std::vector<Pharmacy>& pharmacies)
+
+bool FileManager::savePharmacies(const std::vector<std::shared_ptr<Pharmacy>>& pharmacies)
 {
     try
     {
@@ -361,8 +361,10 @@ bool FileManager::savePharmacies(const std::vector<Pharmacy>& pharmacies)
 
         for (const auto& pharmacy : pharmacies)
         {
-            Pharmacy nonConstPharmacy = pharmacy;
-            pharmaciesFile.Write_record_in_file_text(nonConstPharmacy);
+            if (pharmacy) {
+                Pharmacy nonConstPharmacy = *pharmacy;
+                pharmaciesFile.Write_record_in_file_text(nonConstPharmacy);
+            }
         }
         return true;
     }
@@ -372,8 +374,7 @@ bool FileManager::savePharmacies(const std::vector<Pharmacy>& pharmacies)
     }
 }
 
-// Методы для работы с файлом stock.txt (остатки товаров)
-bool FileManager::loadStockData(std::vector<Pharmacy>& pharmacies, const std::vector<std::shared_ptr<Medicine>>& medicines)
+bool FileManager::loadStockData(std::vector<std::shared_ptr<Pharmacy>>& pharmacies, const std::vector<std::shared_ptr<Medicine>>& medicines)
 {
     try
     {
@@ -383,14 +384,14 @@ bool FileManager::loadStockData(std::vector<Pharmacy>& pharmacies, const std::ve
         std::map<std::string, std::shared_ptr<Medicine>> medicineMap;
         for (const auto& med : medicines)
         {
-            if (med) 
+            if (med)
                 medicineMap[med->getId()] = med;
         }
 
         // Создаем карту аптек для быстрого поиска по ID
-        std::map<std::string, Pharmacy*> pharmacyMap;
-        for (auto& pharmacy : pharmacies) 
-            pharmacyMap[pharmacy.getId()] = &pharmacy;
+        std::map<std::string, std::shared_ptr<Pharmacy>> pharmacyMap;
+        for (auto& pharmacy : pharmacies)
+            pharmacyMap[pharmacy->getId()] = pharmacy;
 
         StockRecord record;
         while (!stockFile.R_end_file())
@@ -402,7 +403,7 @@ bool FileManager::loadStockData(std::vector<Pharmacy>& pharmacies, const std::ve
                 auto pharmacyIt = pharmacyMap.find(record.pharmacyId);
                 auto medicineIt = medicineMap.find(record.productId);
 
-                if (pharmacyIt != pharmacyMap.end() && medicineIt != medicineMap.end()) 
+                if (pharmacyIt != pharmacyMap.end() && medicineIt != medicineMap.end())
                     pharmacyIt->second->addToStorage(medicineIt->second, record.quantity);
             }
         }
@@ -414,7 +415,7 @@ bool FileManager::loadStockData(std::vector<Pharmacy>& pharmacies, const std::ve
     }
 }
 
-bool FileManager::saveStockData(const std::vector<Pharmacy>& pharmacies)
+bool FileManager::saveStockData(const std::vector<std::shared_ptr<Pharmacy>>& pharmacies)
 {
     try
     {
@@ -422,7 +423,9 @@ bool FileManager::saveStockData(const std::vector<Pharmacy>& pharmacies)
 
         for (const auto& pharmacy : pharmacies)
         {
-            auto products = pharmacy.getAllProducts();
+            if (!pharmacy) continue;
+
+            auto products = pharmacy->getAllProducts();
             for (const auto& productPair : products)
             {
                 const auto& product = productPair.first;
@@ -435,7 +438,7 @@ bool FileManager::saveStockData(const std::vector<Pharmacy>& pharmacies)
                     std::tm* now = std::localtime(&t);
                     SafeDate currentDate(*now);
 
-                    StockRecord record(product->getId(), pharmacy.getId(), quantity, currentDate);
+                    StockRecord record(product->getId(), pharmacy->getId(), quantity, currentDate);
                     stockFile.Write_record_in_file_text(record);
                 }
             }
@@ -866,8 +869,8 @@ std::vector<std::pair<std::string, int>> FileManager::getAvailabilityInOtherPhar
         qDebug() << "===== НАЧАЛО getAvailabilityInOtherPharmacies =====";
         qDebug() << "Ищем наличие для productId:" << QString::fromStdString(productId);
 
-        // 1. Сначала загружаем аптеки
-        std::vector<Pharmacy> allPharmacies;
+        // 1. Сначала загружаем аптеки как shared_ptr
+        std::vector<std::shared_ptr<Pharmacy>> allPharmacies;
         if (!loadPharmacies(allPharmacies)) {
             qWarning() << "Не удалось загрузить аптеки из файла";
             qDebug() << "Проверьте наличие и формат файла pharmacies.txt";
@@ -876,9 +879,11 @@ std::vector<std::pair<std::string, int>> FileManager::getAvailabilityInOtherPhar
 
         qDebug() << "Успешно загружено аптек:" << allPharmacies.size();
         for (const auto& pharmacy : allPharmacies) {
-            qDebug() << "  - Аптека:" << QString::fromStdString(pharmacy.getName())
-                     << "ID:" << QString::fromStdString(pharmacy.getId())
-                     << "Телефон:" << QString::fromStdString(pharmacy.getPhoneNumber());
+            if (pharmacy) {
+                qDebug() << "  - Аптека:" << QString::fromStdString(pharmacy->getName())
+                         << "ID:" << QString::fromStdString(pharmacy->getId())
+                         << "Телефон:" << QString::fromStdString(pharmacy->getPhoneNumber());
+            }
         }
 
         // 2. Открываем файл stock.txt
@@ -966,24 +971,27 @@ std::vector<std::pair<std::string, int>> FileManager::getAvailabilityInOtherPhar
                             // Ищем аптеку по ID (без префикса "Р")
                             bool foundPharmacy = false;
                             for (const auto& pharmacy : allPharmacies) {
+                                if (!pharmacy) continue;
+
                                 // Получаем ID аптеки без префикса "Р"
-                                std::string pharmacyId = pharmacy.getId();
+                                std::string pharmacyId = pharmacy->getId();
 
                                 qDebug() << "    Сравниваем: pharmacyId =" << QString::fromStdString(pharmacyId)
                                          << "с pharmId =" << QString::fromStdString(pharmId);
 
                                 if (pharmacyId == pharmId) {
                                     // Нашли аптеку, добавляем результат
-                                    // ВАЖНО: Добавляем телефон тоже!
-                                    std::string displayName = pharmacy.getName() + "\n" + pharmacy.getAddress() + "\n" + pharmacy.getPhoneNumber();
+                                    std::string displayName = pharmacy->getName() + "\n" +
+                                                              pharmacy->getAddress() + "\n" +
+                                                              pharmacy->getPhoneNumber();
                                     result.push_back({displayName, quantity});
                                     foundPharmacy = true;
                                     foundMatches++;
 
                                     qDebug() << "    НАЙДЕНА АПТЕКА!";
-                                    qDebug() << "    Название:" << QString::fromStdString(pharmacy.getName());
-                                    qDebug() << "    Адрес:" << QString::fromStdString(pharmacy.getAddress());
-                                    qDebug() << "    Телефон:" << QString::fromStdString(pharmacy.getPhoneNumber());
+                                    qDebug() << "    Название:" << QString::fromStdString(pharmacy->getName());
+                                    qDebug() << "    Адрес:" << QString::fromStdString(pharmacy->getAddress());
+                                    qDebug() << "    Телефон:" << QString::fromStdString(pharmacy->getPhoneNumber());
                                     qDebug() << "    Количество:" << quantity;
                                     break;
                                 }
@@ -1021,7 +1029,6 @@ std::vector<std::pair<std::string, int>> FileManager::getAvailabilityInOtherPhar
 
     return result;
 }
-
 // Также обновляем метод getPharmacyNames:
 std::map<std::string, std::string> FileManager::getPharmacyNames() const
 {

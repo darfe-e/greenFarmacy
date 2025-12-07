@@ -446,23 +446,21 @@ void MainWindow::setupColors()
 void MainWindow::loadAllData()
 {
     try {
-        // 1. ПОЛНАЯ ОЧИСТКА ДАННЫХ ПЕРЕД ЗАГРУЗКОЙ
-        // Очищаем контейнеры в PharmacyManager
+        // 1. ПОЛНАЯ ОЧИСТКА ДАННЫХ ПЕРЕД ЗАГРРУЗКОЙ
         pharmacyManager.clearAll();
 
         // 2. ЗАГРУЗКА АПТЕК ИЗ ФАЙЛА
-        std::vector<Pharmacy> loadedPharmacies;
-        if (FileManager::getInstance().loadPharmacies(loadedPharmacies)) {
-            for (const auto& pharmacy : loadedPharmacies) {
+        std::vector<std::shared_ptr<Pharmacy>> loadedPharmaciesPtrs;
+        if (FileManager::getInstance().loadPharmacies(loadedPharmaciesPtrs)) {
+            for (const auto& pharmacyPtr : loadedPharmaciesPtrs) {
                 try {
-                    pharmacyManager.addPharmacy(std::make_shared<Pharmacy>(pharmacy));
+                    pharmacyManager.addPharmacy(pharmacyPtr);
                 } catch (const std::exception& e) {
                     qDebug() << "Предупреждение: " << e.what()
                              << " - аптека уже существует или ошибка добавления";
-                    // Игнорируем ошибку и продолжаем загрузку
                 }
             }
-            qDebug() << "Загружено аптек:" << loadedPharmacies.size();
+            qDebug() << "Загружено аптек:" << loadedPharmaciesPtrs.size();
         }
 
         // 3. ЗАГРУЗКА ЛЕКАРСТВ И ПРОВЕРКА СРОКА ГОДНОСТИ
@@ -470,16 +468,12 @@ void MainWindow::loadAllData()
         std::vector<std::shared_ptr<WriteOff>> expiredWriteOffs;
 
         if (FileManager::getInstance().loadMedicines(medicines)) {
-            // Получаем текущую дату через статический метод
             SafeDate currentDate = SafeDate::currentDate();
 
-            // ЗАГРУЖАЕМ АНАЛОГИ ИЗ ФАЙЛА
             FileManager::getInstance().loadAnalogues(medicines);
 
             for (const auto& medicine : medicines) {
-                // Проверяем, истек ли срок годности
                 if (medicine->isExpired()) {
-                    // Создаем операцию списания
                     std::string writeOffId = "WRITE_" + medicine->getId() + "_" +
                                              std::to_string(std::time(nullptr));
 
@@ -487,7 +481,7 @@ void MainWindow::loadAllData()
                         writeOffId,
                         currentDate,
                         medicine,
-                        1, // Количество списываемого товара
+                        1,
                         "Срок годности истек",
                         "completed"
                         );
@@ -497,7 +491,6 @@ void MainWindow::loadAllData()
                              << QString::fromStdString(medicine->getName())
                              << "ID:" << QString::fromStdString(medicine->getId());
                 } else {
-                    // Добавляем в каталог только если не просрочено
                     try {
                         pharmacyManager.addProduct(medicine);
                     } catch (const std::exception& e) {
@@ -506,12 +499,10 @@ void MainWindow::loadAllData()
                 }
             }
 
-            // Добавляем списания в память
             for (const auto& writeOff : expiredWriteOffs) {
                 pharmacyManager.addOperation(writeOff);
             }
 
-            // Устанавливаем флаг изменений, если были созданы списания
             if (!expiredWriteOffs.empty()) {
                 dataModified = true;
             }
@@ -519,7 +510,6 @@ void MainWindow::loadAllData()
             qDebug() << "Загружено лекарств:" << pharmacyManager.getAllProducts().size();
             qDebug() << "Списано просроченных:" << expiredWriteOffs.size();
 
-            // Показываем сообщение о списанных товарах
             if (!expiredWriteOffs.empty()) {
                 QMessageBox::information(this, "Списание товаров",
                                          QString("Автоматически списано %1 просроченных товаров.\n"
@@ -528,10 +518,10 @@ void MainWindow::loadAllData()
             }
         } else {
             QMessageBox::warning(this, "Предупреждение",
-                                 "Не удалось загрузить данные о лекарствах. Файл может быть пустым или отсутствовать.");
+                                 "Не удалось загрузить данные о лекарствах.");
         }
 
-        // 4. ЗАГРУЗКА СУЩЕСТВУЮЩИХ ОПЕРАЦИЙ ИЗ ФАЙЛА
+        // 4. ЗАГРУЗКА ОПЕРАЦИЙ ИЗ ФАЙЛА
         std::vector<std::shared_ptr<InventoryOperation>> operations;
         if (FileManager::getInstance().loadInventoryOperations(operations)) {
             for (const auto& operation : operations) {
@@ -545,18 +535,18 @@ void MainWindow::loadAllData()
         }
 
         // 5. ЗАГРУЗКА ДАННЫХ О ЗАПАСАХ
-        if (FileManager::getInstance().loadStockData(loadedPharmacies, medicines)) {
+        // Получаем аптеки из менеджера (уже vector<shared_ptr<Pharmacy>>)
+        auto allPharmacies = pharmacyManager.getAllPharmacies();
+        if (FileManager::getInstance().loadStockData(allPharmacies, medicines)) {
             qDebug() << "Данные о запасах загружены";
         }
 
         updateCompleter();
         showProductList();
 
-        // Сбрасываем флаг изменений после успешной загрузки
         dataModified = false;
         updateActionButtons();
 
-        // ИТОГОВОЕ СООБЩЕНИЕ В ЛОГАХ
         qDebug() << "=== Загрузка данных завершена ===";
         qDebug() << "Аптеки:" << pharmacyManager.getAllPharmacies().size();
         qDebug() << "Лекарства:" << pharmacyManager.getAllProducts().size();
@@ -567,13 +557,11 @@ void MainWindow::loadAllData()
         QMessageBox::critical(this, "Ошибка",
                               QString("Критическая ошибка при загрузке данных: %1").arg(e.what()));
 
-        // Даже при ошибке пытаемся обновить интерфейс
         updateCompleter();
         showProductList();
         updateActionButtons();
     }
 }
-
 void MainWindow::updateActionButtons()
 {
     // Обновляем состояние кнопок в зависимости от флага изменений
@@ -1202,7 +1190,7 @@ void MainWindow::onSaveChanges()
     try {
         // Получаем все данные из контейнеров PharmacyManager
         auto allProducts = pharmacyManager.getAllProducts();
-        auto allOperations = pharmacyManager.getAllOperations(); // ЭТО ТОЛЬКО ОПЕРАЦИИ В ПАМЯТИ
+        auto allOperations = pharmacyManager.getAllOperations();
 
         qDebug() << "=== СОХРАНЕНИЕ ===";
         qDebug() << "Операций в памяти:" << allOperations.size();
@@ -1268,19 +1256,21 @@ void MainWindow::onSaveChanges()
                                  "Не удалось сохранить аналоги!");
         }
 
-        // 4. Сохраняем запасы
-        auto allPharmacies = pharmacyManager.getAllPharmacies();
-        std::vector<Pharmacy> pharmacyList;
-        for (const auto& pharmacyPtr : allPharmacies) {
-            if (pharmacyPtr) {
-                pharmacyList.push_back(*pharmacyPtr);
-            }
-        }
+        // 4. Сохраняем запасы - получаем vector<shared_ptr<Pharmacy>> и передаем его
+        auto allPharmacies = pharmacyManager.getAllPharmacies(); // Это уже vector<shared_ptr<Pharmacy>>
 
-        if (!FileManager::getInstance().saveStockData(pharmacyList)) {
+        // НЕ создаем pharmacyList, передаем напрямую allPharmacies
+        if (!FileManager::getInstance().saveStockData(allPharmacies)) {
             success = false;
             QMessageBox::warning(this, "Предупреждение",
                                  "Не удалось сохранить данные о запасах!");
+        }
+
+        // 5. Сохраняем аптеки (тоже передаем allPharmacies)
+        if (!FileManager::getInstance().savePharmacies(allPharmacies)) {
+            success = false;
+            QMessageBox::warning(this, "Предупреждение",
+                                 "Не удалось сохранить данные об аптеках!");
         }
 
         if (success) {
@@ -1297,6 +1287,7 @@ void MainWindow::onSaveChanges()
         throw;
     }
 }
+
 void MainWindow::onUndo()
 {
     if (!dataModified) {
