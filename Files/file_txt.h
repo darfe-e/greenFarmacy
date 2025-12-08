@@ -29,36 +29,27 @@ public:
     File_text<T>& operator<<(const std::string& str);
     File_text<T>& operator<<(const char* const str);
 
-    void Close_file_in() {
-        if(file_i.is_open()) {
-            file_i.close();
-        }
-    }
+    void Close_file_in() { if(file_i.is_open()) { file_i.close(); } }
 
-    void Close_file_o() {
-        if(file_o.is_open()) {
-            file_o.flush();  // Сбрасываем буфер
-            file_o.close();
-        }
-    }
-
-    void Close_file_out() {
-        if (file_o.is_open()) {
-            file_o.close();
-        }
-    }
-
-    void Flush() {
-        if(file_o.is_open()) {
+    void Close_file_o()
+    {
+        if(file_o.is_open())
+        {
             file_o.flush();
+            file_o.close();
         }
     }
+
+    void Close_file_out() { if (file_o.is_open()) { file_o.close(); } }
+
+    void Flush() { if(file_o.is_open()) { file_o.flush(); } }
 
     void Reset_file()
     {
-        if(file_i.is_open()) {
-            file_i.clear(); // сбрасываем флаги ошибок
-            file_i.seekg(0, std::ios::beg); // переходим в начало
+        if(file_i.is_open())
+        {
+            file_i.clear();
+            file_i.seekg(0, std::ios::beg);
         }
     }
 };

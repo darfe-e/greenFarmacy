@@ -2,7 +2,7 @@
 #define EXPIREDPRODUCTEXCEPTION_H
 
 #include "MedicalProductException.h"
-#include "safedate.h"
+#include "my_inheritence/safedate.h"
 
 class ExpiredProductException : public MedicalProductException
 {

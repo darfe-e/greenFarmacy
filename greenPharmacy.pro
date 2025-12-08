@@ -11,31 +11,27 @@ CONFIG += c++17
 SOURCES += \
     Exception/safeinput.cpp \
     Files/file_txt.cpp \
-    addproductdialog.cpp \
-    analoguesdialog.cpp \
-    availabilitydialog.cpp \
-    filemanager.cpp \
-    inventoryoperation.cpp \
     main.cpp \
-    mainwindow.cpp \
-    medicalproduct.cpp \
-    medicine.cpp \
-    ointment.cpp \
-    operationsdialog.cpp \
-    pharmacy.cpp \
-    pharmacymanager.cpp \
-    return.cpp \
-    returnsdialog.cpp \
-    safedate.cpp \
-    simpleavailabilitydialog.cpp \
-    stockrecord.cpp \
-    storage.cpp \
-    suppliesdialog.cpp \
-    supply.cpp \
-    syrup.cpp \
-    tablet.cpp \
-    writeoff.cpp \
-    writeoffsdialog.cpp
+    my_inheritence/filemanager.cpp \
+    my_inheritence/inventoryoperation.cpp \
+    my_inheritence/medicalproduct.cpp \
+    my_inheritence/medicine.cpp \
+    my_inheritence/ointment.cpp \
+    my_inheritence/pharmacy.cpp \
+    my_inheritence/pharmacymanager.cpp \
+    my_inheritence/return.cpp \
+    my_inheritence/safedate.cpp \
+    my_inheritence/stockrecord.cpp \
+    my_inheritence/storage.cpp \
+    my_inheritence/supply.cpp \
+    my_inheritence/syrup.cpp \
+    my_inheritence/tablet.cpp \
+    my_inheritence/writeoff.cpp \
+    qt_classes/addproductdialog.cpp \
+    qt_classes/analoguesdialog.cpp \
+    qt_classes/mainwindow.cpp \
+    qt_classes/operationsdialog.cpp \
+    qt_classes/simpleavailabilitydialog.cpp
 
 HEADERS += \
     Exception/FileExceptions/FileNotFoundException.h \
@@ -52,48 +48,41 @@ HEADERS += \
     Exception/InventoryExceptions/StorageOperationException.h \
     Exception/PharmacyExceptions/DuplicateProductException.h \
     Exception/PharmacyExceptions/ExpiredProductException.h \
-    Exception/PharmacyExceptions/InvalidPriceException.h \
     Exception/PharmacyExceptions/InvalidProductDataException.h \
-    Exception/PharmacyExceptions/InvalidProductIdException.h \
     Exception/PharmacyExceptions/MedicalProductException.h \
     Exception/PharmacyExceptions/PharmacyException.h \
     Exception/PharmacyExceptions/ProductNotFoundException.h \
     Exception/safeinput.h \
     Files/file.h \
     Files/file_txt.h \
-    addproductdialog.h \
-    analoguesdialog.h \
-    availabilitydialog.h \
-    binarytree.h \
     file.h \
-    filemanager.h \
-    inventoryoperation.h \
-    mainwindow.h \
-    medicalproduct.h \
-    medicine.h \
-    ointment.h \
-    operationsdialog.h \
-    pharmacy.h \
-    pharmacymanager.h \
-    return.h \
-    returnsdialog.h \
-    reverse_tree_iterator.h \
-    safedate.h \
-    simpleavailabilitydialog.h \
-    stockrecord.h \
-    storage.h \
-    suppliesdialog.h \
-    supply.h \
-    syrup.h \
-    tablet.h \
-    tree_algorithms.h \
-    tree_iterator.h \
-    treenode.h \
-    writeoff.h \
-    writeoffsdialog.h
+    my_binary_tree/binarytree.h \
+    my_binary_tree/reverse_tree_iterator.h \
+    my_binary_tree/tree_algorithms.h \
+    my_binary_tree/tree_iterator.h \
+    my_binary_tree/treenode.h \
+    my_inheritence/filemanager.h \
+    my_inheritence/inventoryoperation.h \
+    my_inheritence/medicalproduct.h \
+    my_inheritence/medicine.h \
+    my_inheritence/ointment.h \
+    my_inheritence/pharmacy.h \
+    my_inheritence/pharmacymanager.h \
+    my_inheritence/return.h \
+    my_inheritence/safedate.h \
+    my_inheritence/stockrecord.h \
+    my_inheritence/storage.h \
+    my_inheritence/supply.h \
+    my_inheritence/syrup.h \
+    my_inheritence/tablet.h \
+    my_inheritence/writeoff.h \
+    qt_classes/addproductdialog.h \
+    qt_classes/analoguesdialog.h \
+    qt_classes/mainwindow.h \
+    qt_classes/operationsdialog.h \
+    qt_classes/simpleavailabilitydialog.h
 
-FORMS += \
-    mainwindow.ui
+FORMS +=
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin

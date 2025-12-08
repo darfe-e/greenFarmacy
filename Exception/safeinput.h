@@ -5,8 +5,6 @@
 #include <string>
 #include <limits>
 #include "Exception/PharmacyExceptions/InvalidProductDataException.h"
-#include "Exception/PharmacyExceptions/InvalidPriceException.h"
-#include "Exception/PharmacyExceptions/InvalidProductIdException.h"
 
 class SafeInput
 {

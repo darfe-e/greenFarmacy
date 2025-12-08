@@ -2,7 +2,6 @@
 #define PRODUCTNOTFOUNDEXCEPTION_H
 
 #include "MedicalProductException.h"
-
 class ProductNotFoundException : public MedicalProductException
 {
 private:
