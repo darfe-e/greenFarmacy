@@ -29,24 +29,6 @@ FileManager& FileManager::getInstance()                                        /
     return *instance;
 }
 
-bool FileManager::truncateMedicinesFile()                                      // Очистка файла лекарств
-{
-    try
-    {
-        if (!medicinesFile.Open_file_trunc())
-            throw FileWriteException("Failed to truncate medicines file");
-        return true;
-    }
-    catch (const FileWriteException& e)
-    {
-        return false;
-    }
-    catch (const std::exception& e)
-    {
-        return false;
-    }
-}
-
 bool FileManager::loadMedicines(std::vector<std::shared_ptr<Medicine>>& medicines) // Загрузка лекарств
 {
     try
@@ -205,55 +187,55 @@ bool FileManager::saveMedicines(const std::vector<std::shared_ptr<Medicine>>& me
     }
 }
 
-bool FileManager::addMedicine(std::shared_ptr<Medicine> medicine)              // Добавление одного лекарства
-{
-    try
-    {
-        if (!medicine) return false;
+// bool FileManager::addMedicine(std::shared_ptr<Medicine> medicine)              // Добавление одного лекарства
+// {
+//     try
+//     {
+//         if (!medicine) return false;
 
-        SafeInput::validateProductId(medicine->getId());                      // Валидация ID
-        SafeInput::validateTextField(medicine->getName(), "Name");            // Валидация названия
-        SafeInput::validateTextField(medicine->getManufacturerCountry(), "Country"); // Валидация страны
-        SafeInput::validateTextField(medicine->getActiveSubstance(), "Active substance"); // Валидация вещества
+//         SafeInput::validateProductId(medicine->getId());                      // Валидация ID
+//         SafeInput::validateTextField(medicine->getName(), "Name");            // Валидация названия
+//         SafeInput::validateTextField(medicine->getManufacturerCountry(), "Country"); // Валидация страны
+//         SafeInput::validateTextField(medicine->getActiveSubstance(), "Active substance"); // Валидация вещества
 
-        if (medicine->getBasePrice() <= 0)                                    // Проверка цены
-            return false;
+//         if (medicine->getBasePrice() <= 0)                                    // Проверка цены
+//             return false;
 
-        medicinesFile.Close_file_o();
-        if (!medicinesFile.Open_file_out()) return false;
+//         medicinesFile.Close_file_o();
+//         if (!medicinesFile.Open_file_out()) return false;
 
-        if (auto tablet = std::dynamic_pointer_cast<Tablet>(medicine))        // Добавление таблеток
-        {
-            std::ostringstream oss;
-            oss << *tablet;
-            medicinesFile.Write_string_line(oss.str());
-        }
-        else if (auto syrup = std::dynamic_pointer_cast<Syrup>(medicine))     // Добавление сиропа
-        {
-            std::ostringstream oss;
-            oss << *syrup;
-            medicinesFile.Write_string_line(oss.str());
-        }
-        else if (auto ointment = std::dynamic_pointer_cast<Ointment>(medicine)) // Добавление мази
-        {
-            std::ostringstream oss;
-            oss << *ointment;
-            medicinesFile.Write_string_line(oss.str());
-        }
-        else
-            return false;
+//         if (auto tablet = std::dynamic_pointer_cast<Tablet>(medicine))        // Добавление таблеток
+//         {
+//             std::ostringstream oss;
+//             oss << *tablet;
+//             medicinesFile.Write_string_line(oss.str());
+//         }
+//         else if (auto syrup = std::dynamic_pointer_cast<Syrup>(medicine))     // Добавление сиропа
+//         {
+//             std::ostringstream oss;
+//             oss << *syrup;
+//             medicinesFile.Write_string_line(oss.str());
+//         }
+//         else if (auto ointment = std::dynamic_pointer_cast<Ointment>(medicine)) // Добавление мази
+//         {
+//             std::ostringstream oss;
+//             oss << *ointment;
+//             medicinesFile.Write_string_line(oss.str());
+//         }
+//         else
+//             return false;
 
-        medicinesFile.Flush();
-        medicinesFile.Close_file_o();
-        return true;
+//         medicinesFile.Flush();
+//         medicinesFile.Close_file_o();
+//         return true;
 
-    }
-    catch (...)
-    {
-        medicinesFile.Close_file_o();
-        return false;
-    }
-}
+//     }
+//     catch (...)
+//     {
+//         medicinesFile.Close_file_o();
+//         return false;
+//     }
+// }
 
 bool FileManager::loadPharmacies(std::vector<std::shared_ptr<Pharmacy>>& pharmacies) // Загрузка аптек
 {
@@ -418,39 +400,6 @@ bool FileManager::saveStockData(const std::vector<std::shared_ptr<Pharmacy>>& ph
     }
 }
 
-std::map<std::string, int> FileManager::findProductInPharmacies(const std::string& productId) // Поиск товара в аптеках
-{
-    std::map<std::string, int> result;
-
-    try
-    {
-        if (!stockFile.Open_file_in()) return result;
-
-        StockRecord record;
-        while (!stockFile.R_end_file())
-        {
-            stockFile.Read_record_in_file_text(record);
-            if (!stockFile.R_end_file() && record.productId == productId && record.quantity > 0)
-                result[record.pharmacyId] = record.quantity;                // Добавление результата
-        }
-    }
-    catch (const std::exception& e)
-    {
-    }
-
-    return result;
-}
-
-std::vector<std::string> FileManager::findPharmaciesWithProduct(const std::string& productId) // Поиск аптек с товаром
-{
-    std::vector<std::string> result;
-
-    auto pharmaciesWithProduct = findProductInPharmacies(productId);          // Получение аптек с товаром
-    for (const auto& pair : pharmaciesWithProduct)
-        result.push_back(pair.first);                                        // Добавление ID аптек
-
-    return result;
-}
 
 bool FileManager::loadInventoryOperations(std::vector<std::shared_ptr<InventoryOperation>>& operations) // Загрузка операций
 {
@@ -514,41 +463,6 @@ bool FileManager::loadInventoryOperations(std::vector<std::shared_ptr<InventoryO
             }
         }
 
-        return true;
-    }
-    catch (const std::exception& e)
-    {
-        return false;
-    }
-}
-
-bool FileManager::addInventoryOperation(std::shared_ptr<InventoryOperation> operation) // Добавление одной операции
-{
-    try
-    {
-        if (!inventoryOperationsFile.Open_file_out()) return false;
-
-        if (operation)
-        {
-            if (auto supply = std::dynamic_pointer_cast<Supply>(operation))  // Добавление поставки
-            {
-                std::ostringstream oss;
-                oss << "SUPPLY;" << *supply;
-                inventoryOperationsFile.Write_string_line(oss.str());
-            }
-            else if (auto returnOp = std::dynamic_pointer_cast<Return>(operation)) // Добавление возврата
-            {
-                std::ostringstream oss;
-                oss << "RETURN;" << *returnOp;
-                inventoryOperationsFile.Write_string_line(oss.str());
-            }
-            else if (auto writeOff = std::dynamic_pointer_cast<WriteOff>(operation)) // Добавление списания
-            {
-                std::ostringstream oss;
-                oss << "WRITEOFF;" << *writeOff;
-                inventoryOperationsFile.Write_string_line(oss.str());
-            }
-        }
         return true;
     }
     catch (const std::exception& e)
@@ -703,125 +617,6 @@ bool FileManager::saveAnalogues(const std::vector<std::shared_ptr<Medicine>>& me
     }
 }
 
-bool FileManager::addAnalogue(const std::string& medicineId, const std::string& analogueId) // Добавление одного аналога
-{
-    try
-    {
-        analoguesFile.Close_file_o();
-
-        if (!analoguesFile.Open_file_out())
-            return false;
-
-        std::string line = medicineId + ";" + analogueId;                   // Формат строки
-        analoguesFile.Write_string_line(line);                              // Запись в файл
-
-        analoguesFile.Flush();
-        analoguesFile.Close_file_o();
-        return true;
-    }
-    catch (const std::exception& e)
-    {
-        analoguesFile.Close_file_o();
-        return false;
-    }
-}
-
-bool FileManager::removeAnalogue(const std::string& medicineId, const std::string& analogueId) // Удаление аналога
-{
-    try
-    {
-        analoguesFile.Close_file_in();
-        analoguesFile.Close_file_o();
-
-        if (!analoguesFile.Open_file_in())                                   // Файл не существует
-            return true;
-
-        std::vector<std::string> lines;
-        std::string line;
-        std::string targetLine = medicineId + ";" + analogueId;             // Целевая строка для удаления
-
-        while (true)
-        {
-            try
-            {
-                analoguesFile.Read_string_line(line);
-                if (line != targetLine)                                     // Сохранение всех строк кроме удаляемой
-                    lines.push_back(line);
-            }
-            catch (const FileParseException& e)
-            {
-                if (std::string(e.what()).find("End of file") != std::string::npos)
-                    break;
-                continue;
-            }
-        }
-
-        analoguesFile.Close_file_in();
-
-        if (!analoguesFile.Open_file_trunc())                              // Перезапись файла
-            return false;
-
-        for (const auto& savedLine : lines)                                // Запись оставшихся строк
-            analoguesFile.Write_string_line(savedLine);
-
-        analoguesFile.Flush();
-        analoguesFile.Close_file_o();
-        return true;
-    }
-    catch (const std::exception& e)
-    {
-        analoguesFile.Close_file_in();
-        analoguesFile.Close_file_o();
-        return false;
-    }
-}
-
-std::vector<std::string> FileManager::getMedicineAnalogues(const std::string& medicineId) // Получение аналогов лекарства
-{
-    std::vector<std::string> analogues;
-
-    try
-    {
-        analoguesFile.Close_file_in();
-
-        if (!analoguesFile.Open_file_in())                                   // Файл не существует
-            return analogues;
-
-        std::string line;
-        while (true)
-        {
-            try
-            {
-                analoguesFile.Read_string_line(line);
-
-                size_t delimiterPos = line.find(';');                        // Разделитель
-                if (delimiterPos != std::string::npos)
-                {
-                    std::string currentMedicineId = line.substr(0, delimiterPos);
-                    std::string analogueId = line.substr(delimiterPos + 1);
-
-                    if (currentMedicineId == medicineId)                    // Найдены аналог для нужного лекарства
-                        analogues.push_back(analogueId);
-                }
-            }
-            catch (const FileParseException& e)
-            {
-                if (std::string(e.what()).find("End of file") != std::string::npos)
-                    break;
-                continue;
-            }
-        }
-
-        analoguesFile.Close_file_in();
-    }
-    catch (const std::exception& e)
-    {
-        analoguesFile.Close_file_in();
-    }
-
-    return analogues;
-}
-
 std::vector<std::pair<std::string, int>> FileManager::getAvailabilityInOtherPharmacies(
     const std::string& productId)
 {
@@ -934,108 +729,4 @@ std::vector<std::pair<std::string, int>> FileManager::getAvailabilityInOtherPhar
     }
 
     return result;
-}
-std::map<std::string, std::string> FileManager::getPharmacyNames() const
-{
-    std::map<std::string, std::string> result;
-
-    try
-    {
-
-        std::ifstream file("pharmacies.txt");
-        if (!file.is_open())
-        {
-            qWarning() << "Не удалось открыть файл pharmacies.txt";
-            return result;
-        }
-
-
-        std::string line;
-        int lineNumber = 0;
-        while (std::getline(file, line))
-        {
-            lineNumber++;
-
-            if (line.empty() || line.find_first_not_of(' ') == std::string::npos)
-                continue;
-
-            size_t colonPos = line.find(':');
-            if (colonPos == std::string::npos)
-                continue;
-
-            std::string id = line.substr(0, colonPos);
-
-
-            id.erase(std::remove(id.begin(), id.end(), ' '), id.end());
-
-            if (!id.empty() && !std::all_of(id.begin(), id.end(), ::isdigit))
-                continue;
-
-            size_t semicolonPos = line.find(';', colonPos + 1);
-            std::string name;
-            if (semicolonPos != std::string::npos)
-                name = line.substr(colonPos + 1, semicolonPos - colonPos - 1);
-            else
-                name = line.substr(colonPos + 1);
-
-            id.erase(0, id.find_first_not_of(" \t\r\n"));
-            id.erase(id.find_last_not_of(" \t\r\n") + 1);
-
-            name.erase(0, name.find_first_not_of(" \t\r\n"));
-            name.erase(name.find_last_not_of(" \t\r\n") + 1);
-
-            if (!id.empty() && !name.empty())
-                result[id] = name;
-        }
-
-        file.close();
-
-    }
-    catch (const std::exception& e)
-    {
-        qWarning() << "Ошибка в getPharmacyNames: " << e.what();
-    }
-
-    return result;
-}
-
-bool FileManager::saveAllData(const std::vector<std::shared_ptr<Medicine>>& medicines,
-                              const std::vector<std::shared_ptr<InventoryOperation>>& operations)
-{
-    try
-    {
-        if (!saveMedicines(medicines))
-            return false;
-
-        if (!saveInventoryOperations(operations))
-            return false;
-
-        return true;
-
-    }
-    catch (const std::exception& e)
-    {
-        return false;
-    }
-}
-
-bool FileManager::loadAllData(std::vector<std::shared_ptr<Medicine>>& medicines,
-                              std::vector<std::shared_ptr<InventoryOperation>>& operations)
-{
-    try
-    {
-        if (!loadMedicines(medicines))
-            return false;
-
-
-        if (!loadInventoryOperations(operations))
-            return false;
-
-        return true;
-
-    }
-    catch (const std::exception& e)
-    {
-        return false;
-    }
 }

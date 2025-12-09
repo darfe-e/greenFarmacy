@@ -542,11 +542,6 @@ void MainWindow::updateActionButtons()                         // Обновле
     undoBtn->setEnabled(dataModified);
 }
 
-std::string MainWindow::generateOperationId()                  // Генерация ID операции
-{
-    static int counter = 0;
-    return "OP" + std::to_string(++counter) + "_" + std::to_string(time(nullptr));
-}
 
 void MainWindow::showProductList()                             // Показать список всех продуктов
 {
@@ -1295,19 +1290,6 @@ void MainWindow::onUndo()                                      // Отмена �
                                   QString("Ошибка отмены: %1").arg(e.what()));
         }
     }
-}
-
-void MainWindow::onCancelEdit()                                // Отмена редактирования
-{
-    hideEditPanel();
-    QMessageBox::information(this, "Отмена", "Редактирование отменено");
-}
-
-void MainWindow::pushToUndoStack()                             // Добавление в стек отмены
-{
-    undoStack.push("current_state");
-    if (undoStack.size() > 10)
-        undoStack.remove(0);
 }
 
 void MainWindow::onItemSelected()                              // Обработка выбора элемента в списке

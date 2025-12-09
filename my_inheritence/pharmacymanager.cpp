@@ -30,6 +30,17 @@ void PharmacyManager::removeProduct(const std::string& productId)
     if (it == productsCatalog.end())                                                // Если продукт не найден
         throw ProductNotFoundException(productId);
 
+    // Удаляем продукт из списков аналогов у других лекарств
+    for (auto& [id, product] : productsCatalog)  // <-- Исправлено имя переменной
+    {
+        // Пробуем преобразовать MedicalProduct в Medicine
+        if (auto medicinePtr = std::dynamic_pointer_cast<Medicine>(product)) {  // <-- Другое имя
+            // Теперь medicinePtr - это std::shared_ptr<Medicine>
+            // И мы можем вызвать removeAnalogue()
+            medicinePtr->removeAnalogue(productId);
+        }
+    }
+
     productsCatalog.erase(it);                                                      // Удаление продукта из каталога
 }
 
@@ -115,33 +126,6 @@ std::vector<std::shared_ptr<WriteOff>> PharmacyManager::getWriteOffOperations() 
     return writeOffs;                                                               // Возврат списка списаний
 }
 
-std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProductsByCountry(const std::string& country) const
-{
-    if (country.empty())                                                            // Проверка пустой строки страны
-        throw InvalidProductDataException("country", "cannot be empty");
-
-    std::vector<std::shared_ptr<MedicalProduct>> result;                            // Вектор для результатов
-    for (const auto& pair : productsCatalog)                                        // Проход по всем продуктам
-        if (pair.second->getManufacturerCountry().find(country) != std::string::npos)// Поиск страны в названии страны
-            result.push_back(pair.second);                                          // Добавление продукта в результат
-
-    return result;                                                                  // Возврат найденных продуктов
-}
-
-std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProductsBySubstance(const std::string& substance) const
-{
-    if (substance.empty())                                                          // Проверка пустой строки вещества
-        throw InvalidProductDataException("substance", "cannot be empty");
-
-    std::vector<std::shared_ptr<MedicalProduct>> result;                            // Вектор для результатов
-    for (const auto& pair : productsCatalog)                                        // Проход по всем продуктам
-        if (auto medicine = std::dynamic_pointer_cast<Medicine>(pair.second))       // Приведение к типу Medicine
-            if (medicine->getActiveSubstance().find(substance) != std::string::npos)// Поиск вещества в названии
-                result.push_back(medicine);                                         // Добавление лекарства в результат
-
-    return result;                                                                  // Возврат найденных лекарств
-}
-
 std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProducts(const std::string& searchTerm) const
 {
     if (searchTerm.empty())                                                         // Проверка пустой строки поиска
@@ -222,23 +206,6 @@ std::vector<std::shared_ptr<Medicine>> PharmacyManager::getAnalogues(const std::
     return analogues;                                                               // Возврат списка аналогов
 }
 
-std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::searchProductsByName(const std::string& name) const
-{
-    if (name.empty())                                                               // Проверка пустого имени
-        throw InvalidProductDataException("name", "cannot be empty");
-
-    std::vector<std::shared_ptr<MedicalProduct>> result;                            // Вектор для результатов
-    for (const auto& pair : productsCatalog)                                        // Проход по всем продуктам
-    {
-        auto product = pair.second;
-        if (product->getName().find(name) != std::string::npos ||                    // Поиск в имени
-            product->getId().find(name) != std::string::npos ||                      // Поиск в ID
-            product->getManufacturerCountry().find(name) != std::string::npos)       // Поиск в стране
-            result.push_back(product);                                              // Добавление продукта в результат
-    }
-    return result;                                                                  // Возврат найденных продуктов
-}
-
 std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::getAllProducts() const
 {
     std::vector<std::shared_ptr<MedicalProduct>> result;                            // Вектор для всех продуктов
@@ -246,39 +213,6 @@ std::vector<std::shared_ptr<MedicalProduct>> PharmacyManager::getAllProducts() c
         result.push_back(pair.second);                                              // Добавление продукта в результат
 
     return result;                                                                  // Возврат всех продуктов
-}
-
-void PharmacyManager::displaySupplyInfo() const
-{
-    std::cout << "=== Supply Operations ===\n";
-    for (const auto& operation : operations)                                        // Проход по всем операциям
-    {
-        auto supply = std::dynamic_pointer_cast<Supply>(operation);                 // Приведение к типу Supply
-        if (supply)                                                                 // Если операция - поставка
-            std::cout << *supply << "---\n";                                        // Вывод информации о поставке
-    }
-}
-
-void PharmacyManager::displayReturnInfo() const
-{
-    std::cout << "=== Return Operations ===\n";
-    for (const auto& operation : operations)                                        // Проход по всем операциям
-    {
-        auto returnOp = std::dynamic_pointer_cast<Return>(operation);               // Приведение к типу Return
-        if (returnOp)                                                               // Если операция - возврат
-            std::cout << *returnOp << "---\n";                                      // Вывод информации о возврате
-    }
-}
-
-void PharmacyManager::displayWriteOffInfo() const
-{
-    std::cout << "=== Write-off Operations ===\n";
-    for (const auto& operation : operations)                                        // Проход по всем операциям
-    {
-        auto writeOff = std::dynamic_pointer_cast<WriteOff>(operation);             // Приведение к типу WriteOff
-        if (writeOff)                                                               // Если операция - списание
-            std::cout << *writeOff << "---\n";                                      // Вывод информации о списании
-    }
 }
 
 bool PharmacyManager::updateProduct(std::shared_ptr<MedicalProduct> updatedProduct)
@@ -293,40 +227,6 @@ bool PharmacyManager::updateProduct(std::shared_ptr<MedicalProduct> updatedProdu
     }
 
     return false;                                                                   // Продукт не найден
-}
-
-void PharmacyManager::loadSuppliesFromFile(const std::string& filename)
-{
-    try
-    {
-        std::ifstream file(filename);                                               // Открытие файла
-        if (!file.is_open())                                                        // Если файл не открылся
-            throw std::runtime_error("Cannot open supplies file");
-
-        std::string line;
-        while (std::getline(file, line))                                            // Чтение файла построчно
-        {
-            if (!line.empty())                                                      // Пропуск пустых строк
-            {
-                std::istringstream iss(line);
-                std::string type;
-                std::getline(iss, type, ';');                                       // Чтение типа операции
-
-                if (type == "SUPPLY")                                               // Если операция - поставка
-                {
-                    Supply supply;
-                    iss >> supply;                                                  // Десериализация поставки
-                    addOperation(std::make_shared<Supply>(supply));                 // Добавление операции
-                }
-            }
-        }
-
-        file.close();                                                               // Закрытие файла
-    }
-    catch (const std::exception& e)                                                 // Обработка исключений
-    {
-        throw std::runtime_error("Error loading supplies: " + std::string(e.what()));
-    }
 }
 
 std::vector<std::shared_ptr<InventoryOperation>> PharmacyManager::getAllOperations() const

@@ -46,13 +46,13 @@ private slots:
     void onEditProduct();
     void onDeleteProduct();
     void onSaveChanges();
-    void onCancelEdit();
+    //void onCancelEdit();
     void onUndo();
 
     void onItemSelected();
     void onAddAnalogue();
     void showProductDetailsInDialog(const QString& productId, QTextEdit* textEdit);
-    std::string generateOperationId();
+    //std::string generateOperationId();
 
 private:
     void setupUI();
@@ -62,7 +62,7 @@ private:
     void showEditPanel();
     void hideEditPanel();
     void updateCompleter();
-    void pushToUndoStack();
+    //void pushToUndoStack();
     void performSearch(const QString &searchText);
     void saveProductChanges(const QString& productId);
     void setupConnections();
@@ -102,8 +102,8 @@ private:
     QPushButton *addAnalogueBtn;
     QPushButton *viewAnaloguesBtn;
 
-    QStack<QString> undoStack;
-    QString currentFilter;
+    //QStack<QString> undoStack;
+    //QString currentFilter;
     bool isEditMode;
 
 
