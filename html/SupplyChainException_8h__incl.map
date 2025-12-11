@@ -1,7 +1,0 @@
-<map id="Exception/InventaryManipExceptions/SupplyChainException.h" name="Exception/InventaryManipExceptions/SupplyChainException.h">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,260,45"/>
-<area shape="rect" id="Node000002" href="$PharmacyException_8h.html" title=" " alt="" coords="19,93,246,133"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="135,46,135,79,130,79,130,46"/>
-<area shape="rect" id="Node000003" title=" " alt="" coords="93,181,173,207"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="135,134,135,167,130,167,130,134"/>
-</map>

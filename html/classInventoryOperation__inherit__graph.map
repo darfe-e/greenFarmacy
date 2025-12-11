@@ -1,9 +1,0 @@
-<map id="InventoryOperation" name="InventoryOperation">
-<area shape="rect" id="Node000001" title=" " alt="" coords="55,5,203,31"/>
-<area shape="rect" id="Node000002" href="$classReturn.html" title=" " alt="" coords="5,79,71,104"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="105,41,54,81,51,76,102,37"/>
-<area shape="rect" id="Node000003" href="$classSupply.html" title=" " alt="" coords="95,79,162,104"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="131,44,131,79,126,79,126,44"/>
-<area shape="rect" id="Node000004" href="$classWriteOff.html" title=" " alt="" coords="187,79,263,104"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="157,37,211,76,207,81,154,41"/>
-</map>

@@ -1,9 +1,0 @@
-<map id="analoguesdialog.h" name="analoguesdialog.h">
-<area shape="rect" id="Node000001" title=" " alt="" coords="213,5,354,31"/>
-<area shape="rect" id="Node000002" href="$analoguesdialog_8cpp.html" title=" " alt="" coords="5,86,161,111"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="242,38,113,88,111,83,240,33"/>
-<area shape="rect" id="Node000003" href="$moc__analoguesdialog_8cpp.html" title=" " alt="" coords="186,79,381,119"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="286,44,286,79,281,79,281,44"/>
-<area shape="rect" id="Node000004" href="$mainwindow_8cpp.html" title=" " alt="" coords="405,86,535,111"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="324,33,444,84,442,88,322,38"/>
-</map>
